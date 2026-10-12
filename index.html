@@ -587,8 +587,8 @@ function renderRegister() {
   } else if (s.key === 'quick') {
     body = `<div class="stack" id="quickWrap">${QUICK_QUESTIONS.map((x, i) => `<div class="quick-row"><div class="quick-q">${esc(x.q)}</div><div class="quick-a">${x.a.map(a => `<button class="quick-btn ${reg.data.quick[i] === a ? 'on' : ''}" data-qi="${i}" data-qa="${esc(a)}">${esc(a)}</button>`).join('')}</div></div>`).join('')}</div>`;
   } else {
-    body = `<input class="field" id="regInput" maxlength="${s.max}" placeholder="${esc(s.placeholder)}" value="${esc(reg.data[s.key])}" autocomplete="off" enterkeyhint="next"><div class="counter"><span id="cnt">${chars(reg.data[s.key]).length}</span>/${s.max}</div>
-      ${s.examples ? `<div class="eyebrow dim" style="margin:6px 0 8px">눌러서 채우기</div><div class="chips">${s.examples.map(x => `<span class="chip" data-ex="${esc(x)}">${esc(x)}</span>`).join('')}</div>` : ''}`;
+    body = `${s.examples ? `<div class="ex" style="margin:0 0 10px;color:var(--fg)">직접 써도 되고, 아래 예시를 눌러도 돼요</div>` : ''}<input class="field" id="regInput" maxlength="${s.max}" placeholder="${esc(s.placeholder)}" value="${esc(reg.data[s.key])}" autocomplete="off" enterkeyhint="next"><div class="counter"><span id="cnt">${chars(reg.data[s.key]).length}</span>/${s.max}</div>
+      ${s.examples ? `<div class="eyebrow dim" style="margin:6px 0 8px">예시</div><div class="chips">${s.examples.map(x => `<span class="chip" data-ex="${esc(x)}">${esc(x)}</span>`).join('')}</div>` : ''}`;
   }
   root.innerHTML = `<div class="reg-wrap">
     <div class="reg-head"><img class="logo" src="logo.png" alt="MIXER SEOUL"><div class="muted" style="margin-top:10px">${reg.editing ? '내 정보 수정' : '오늘 밤, 먼저 말 걸 핑계를 만들어 드릴게요'}</div></div>
@@ -597,7 +597,7 @@ function renderRegister() {
       <div class="eyebrow" style="margin-bottom:8px">${reg.step + 1} / ${regSteps.length}</div>
       <h2>${s.title}</h2><div class="lead">${s.lead}</div>
       ${body}
-      <div class="ex">${s.ex}</div>
+      ${s.examples ? '' : `<div class="ex">${s.ex}</div>`}
       <div class="reg-actions">${reg.step > 0 ? '<button class="btn ghost" id="regBack">이전</button>' : ''}<button class="btn" id="regNext">${reg.step === regSteps.length - 1 ? (reg.editing ? '저장하기' : '입장하기') : '다음'}</button></div>
     </div></div>`;
   const inp = $('#regInput');
@@ -647,10 +647,9 @@ function renderRegisterDone() {
   $('#register').innerHTML = `<div class="reg-wrap" style="justify-content:center;text-align:center">
     <div class="reg-card">
       <div class="eyebrow">Welcome</div>
-      <h2 style="font-size:24px;margin:8px 0 16px">명찰에 이 키워드를 적어 주세요</h2>
+      <h2 style="font-size:24px;margin:8px 0 16px">오늘 밤 당신의 키워드</h2>
       <div class="big-kw">#${esc(kw)}</div>
       <div class="nametag"><div class="nm">${esc(me.display)}</div><div class="kw">#${esc(kw)}</div></div>
-      <div class="muted">같은 키워드를 명찰에서 발견하면 바로 말 걸 핑계 완성</div>
     </div>
     <div class="reg-card" id="scoreReveal" style="display:none">
       <div class="eyebrow">그리고, 내 이름 점수는</div>
@@ -680,7 +679,7 @@ function showWaiting() {
       <div class="eyebrow">Registered</div>
       <h2 style="font-size:24px;margin:8px 0 14px">등록 완료, 조금만 기다려 주세요</h2>
       <div class="nametag"><div class="nm">${esc(me.display)}</div><div class="kw">#${esc(me.keywords?.[0] || '')}</div></div>
-      <div class="muted">명찰에 <b style="color:var(--peach)">#${esc(me.keywords?.[0] || '')}</b> 를 적어 두세요.<br>진행자가 문을 열면 이 화면이 <b style="color:var(--fg)">자동으로</b> 바뀌어요. 앱을 닫아도 괜찮아요.</div>
+      <div class="muted">진행자가 문을 열면 이 화면이 <b style="color:var(--fg)">자동으로</b> 바뀌어요.<br>앱을 닫아도 괜찮아요.</div>
       <div class="wait-pulse"><span></span>지금까지 <b id="waitCount">${state.profiles.length}</b>명 입장</div>
       <button class="btn block ghost" id="waitEdit" style="margin-top:14px">📍 내 정보 · 위치 바꾸기</button>
     </div></div>`;
