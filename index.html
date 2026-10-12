@@ -239,7 +239,7 @@ body.screen{overflow:hidden}
 .sc-spot .who{font-size:clamp(18px,3.4vh,32px);color:var(--fg-2);margin-top:clamp(12px,2.8vh,26px)}
 .sc-spot .kw{margin-top:18px;display:flex;justify-content:center;gap:12px;font-size:clamp(16px,2.6vh,24px);flex-wrap:wrap}
 .sc-spot .kw span{border:1px solid var(--line-2);border-radius:999px;padding:6px 18px;color:var(--peach)}
-.sc-progress{position:fixed;left:0;bottom:0;height:4px;background:var(--brass);box-shadow:0 0 10px var(--glow);width:0;transition:width 15s linear}
+.sc-progress{position:fixed;left:0;bottom:0;height:4px;background:var(--brass);box-shadow:0 0 10px var(--glow);width:0;transition:width 10s linear}
 
 /* 관리자 */
 .admin-row{display:flex;gap:10px;align-items:center;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:6px;font-size:14px}
@@ -277,7 +277,7 @@ const SUPABASE_URL = 'https://nbmetyvgkzmmcfwkyhba.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ibWV0eXZna3ptbWNmd2t5aGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3OTQ2MDAsImV4cCI6MjEwNzM3MDYwMH0.WIpx6o_bLIG2Ik16Jje9qwYwZUtmluvX691wKKBcT6Y';
 const POLL_MS = 4000;          // 새로고침 간격
 const SPOTLIGHT_MS = 30000;    // 스포트라이트 교체 간격
-const SCREEN_ROTATE_MS = 15000;// 큰 화면 모드 순환 간격
+const SCREEN_ROTATE_MS = 10000;// 큰 화면 모드 순환 간격
 
 // 등록 질문 예시 칩 (탭하면 입력칸에 채워지고, 고쳐 쓸 수 있음)
 const INTRO_EXAMPLES = ['요즘 빵에 푹 빠진 사람','주말엔 무조건 집','커피 없으면 못 사는 사람','과제 미루고 넷플릭스 보는 중','헬스 끊고 3일 간 사람','자취 요리 도전 중','카페 투어가 취미','밤에 더 살아나는 야행성','즉흥으로 떠나는 거 좋아해요','덕질이 삶의 원동력','새로운 사람 만나는 거 좋아해요','조용히 듣는 게 편한 사람','사진 찍는 게 제일 재밌어요','요즘 러닝 시작했어요','플레이리스트 만드는 게 취미','방탈출 성공률 높은 편'];
