@@ -270,11 +270,20 @@ const SPOTLIGHT_MS = 30000;    // 스포트라이트 교체 간격
 const SCREEN_ROTATE_MS = 15000;// 큰 화면 모드 순환 간격
 
 // 등록 질문 예시 칩 (탭하면 입력칸에 채워지고, 고쳐 쓸 수 있음)
-const INTRO_EXAMPLES = ['요즘 빵에 푹 빠진 사람','주말엔 무조건 집', '커피 없으면 못 사는 사람','퇴근하면 산책하는 사람','새로운 거 해 보는 거 좋아해요','조용히 듣는 게 편한 사람','맛집 찾아다니는 재미로 살아요','운동 시작한 지 한 달째'];
-const TOPIC_EXAMPLES = ['맛집 추천해 줄 분','요즘 뭐가 재밌는지 알려 줄 분','넷플릭스 뭐 볼지 알려 줄 분','여행지 추천해 줄 분','운동 같이 시작할 분','요즘 읽을 책 추천해 줄 분','주말에 뭐 하는지 궁금해요','취미 얘기 나눌 분'];
-const HINT_EXAMPLES = ['검은 옷','흰 셔츠','안경','1층 테이블','2층 소파','바 근처','입구 쪽','창가'];
+const INTRO_EXAMPLES = ['요즘 빵에 푹 빠진 사람','주말엔 무조건 집','커피 없으면 못 사는 사람','과제 미루고 넷플릭스 보는 중','헬스 끊고 3일 간 사람','자취 요리 도전 중','카페 투어가 취미','밤에 더 살아나는 야행성','즉흥으로 떠나는 거 좋아해요','덕질이 삶의 원동력','새로운 사람 만나는 거 좋아해요','조용히 듣는 게 편한 사람','사진 찍는 게 제일 재밌어요','요즘 러닝 시작했어요','플레이리스트 만드는 게 취미','방탈출 성공률 높은 편'];
+const TOPIC_EXAMPLES = ['맛집 추천해 줄 분','요즘 뭐가 재밌는지 알려 줄 분','넷플릭스 뭐 볼지 알려 줄 분','여행지 추천해 줄 분','운동 같이 시작할 분','플레이리스트 공유해 줄 분','카페 추천해 줄 분','취준·진로 얘기 나눌 분','자취 꿀팁 알려 줄 분','같은 전공 얘기 할 분','덕질 얘기 나눌 분','요즘 읽을 책 추천해 줄 분','주말에 뭐 하는지 궁금해요','MBTI 얘기 해 볼 분'];
+const HINT_EXAMPLES = ['검은 옷','흰 셔츠','안경','모자','후드티','청자켓','1층 테이블','2층 소파','바 근처','입구 쪽','창가','계단 옆'];
 
-const SUGGEST_KEYWORDS = ['러닝','고양이집사','강아지집사','커피덕후','즉흥여행','계획여행','홈쿡','맛집탐방','독서','게임','등산','캠핑','전시회','넷플릭스','아침형','야행성','운동초보','사진','음악','식물키우기'];
+// 추천 키워드 (20대·대학생 기준, 순서대로 칩으로 표시)
+const SUGGEST_KEYWORDS = [
+  '러닝','헬스','클라이밍','필라테스','축구','농구','테니스','수영','자전거','등산','캠핑',
+  '즉흥여행','계획여행','유럽여행','제주','맛집탐방','카페투어','커피덕후','디저트','홈쿡','편의점요리','술약','와인','위스키',
+  '고양이집사','강아지집사','식물키우기',
+  '넷플릭스','영화관','드라마정주행','예능덕후','유튜브','게임','롤','보드게임','방탈출',
+  '독서','전시회','뮤지컬','콘서트','페스티벌','사진','필름카메라','음악','플레이리스트','밴드','노래방','춤',
+  '패션','빈티지','덕질','K-pop','애니','웹툰',
+  '아침형','야행성','운동초보','자취생','본가살이','취준생','공시생','창업','사이드프로젝트','E형','I형',
+];
 
 // 궁합 결과 문구 (점수 내림차순, 첫 번째로 맞는 구간 사용)
 const COMPAT_PHRASES = [
@@ -687,7 +696,7 @@ function allPairs() {
 function myPairs() { return others().map(p => ({ p, pct: compat(state.me.name, p.name).pct })).sort((x, y) => y.pct - x.pct); }
 function renderCompat() {
   const sel = state.compatWith ? byId(state.compatWith) : null;
-  const top = allPairs().slice(0, 10);
+  const top = allPairs().slice(0, 5);
   const mine = myPairs();
   return `<div class="section" style="margin-top:8px"><div class="section-title"><h2>이름 궁합</h2><span class="sub">획수로 보는 콤비 지수</span></div>
     <div class="card"><div class="eyebrow dim" style="margin-bottom:8px">누구랑 볼까요?</div>
@@ -698,7 +707,7 @@ function renderCompat() {
   </div>
   <div class="section"><div class="section-title"><h2>나의 콤비 랭킹</h2><span class="sub">${esc(state.me.display)} 기준 · 자동 집계</span></div>
     <div class="rank-list">${mine.length ? mine.slice(0, 10).map((c, i) => `<div class="item"><span class="no">${i + 1}</span>${avatar(c.p, 34)}<div class="who"><div class="name">${esc(c.p.display)}</div><div class="dim">${esc(compatPhrase(c.pct))}${c.p.hint ? ` · 📍 ${esc(c.p.hint)}` : ''}</div></div><span class="pct">${c.pct}%</span><button class="btn sm ghost" data-go="${c.p.id}" data-kind="compat" data-extra="${c.pct}">찾기</button></div>`).join('') : '<div class="empty">다른 참석자가 들어오면 보여요</div>'}</div></div>
-  <div class="section"><div class="section-title"><h2>오늘의 환상의 콤비 TOP 10</h2><span class="sub">참석자 전원 · 자동 집계</span></div>
+  <div class="section"><div class="section-title"><h2>오늘의 환상의 콤비 TOP 5</h2><span class="sub">참석자 전원 · 자동 집계</span></div>
     <div class="rank-list">${top.length ? top.map((c, i) => `<div class="item ${c.a.id === state.me.id || c.b.id === state.me.id ? 'me' : ''}"><span class="no">${i + 1}</span><div class="who"><div class="name">${esc(c.a.display)} ✕ ${esc(c.b.display)}</div><div class="dim">${esc(compatPhrase(c.pct))}</div></div><span class="pct">${c.pct}%</span></div>`).join('') : '<div class="empty">두 명 이상 등록되면 보여요</div>'}</div></div>`;
 }
 async function runCompatAnimation(target) {
@@ -836,8 +845,8 @@ async function startScreenMode() {
       return `<h2>이름 점수 TOP 10</h2><div class="sc-rank">${ranked.map((x, i) => `<div class="it"><span class="no">${i + 1}</span><div><div>${esc(x.p.display)}</div><div class="sub">${esc(x.s.title)}</div></div><span class="sc">${x.s.score}</span></div>`).join('') || '<div style="font-size:36px;color:var(--fg-2)">아직 등록한 사람이 없어요</div>'}</div>`;
     },
     () => {
-      const top = allPairs().slice(0, 10);
-      return `<h2>오늘의 환상의 콤비 TOP 10</h2><div class="sc-rank">${top.map((c, i) => `<div class="it"><span class="no">${i + 1}</span><div><div>${esc(c.a.display)} ✕ ${esc(c.b.display)}</div><div class="sub">${esc(compatPhrase(c.pct))}</div></div><span class="sc">${c.pct}%</span></div>`).join('') || '<div style="font-size:36px;color:var(--fg-2)">두 명 이상 등록되면 보여요</div>'}</div>`;
+      const top = allPairs().slice(0, 5);
+      return `<h2>오늘의 환상의 콤비 TOP 5</h2><div class="sc-rank" style="grid-template-columns:1fr">${top.map((c, i) => `<div class="it"><span class="no">${i + 1}</span><div><div>${esc(c.a.display)} ✕ ${esc(c.b.display)}</div><div class="sub">${esc(compatPhrase(c.pct))}</div></div><span class="sc">${c.pct}%</span></div>`).join('') || '<div style="font-size:36px;color:var(--fg-2)">두 명 이상 등록되면 보여요</div>'}</div>`;
     },
     () => {
       const pool = state.profiles.filter(p => p.intro); if (!pool.length) return `<h2>오늘의 스포트라이트</h2><div class="sc-spot"><div class="txt" style="color:var(--fg-2)">등록하면 여기에 소개가 떠요</div></div>`;
