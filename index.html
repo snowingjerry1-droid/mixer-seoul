@@ -182,7 +182,7 @@ main#view{flex:1;padding:8px 18px calc(92px + env(safe-area-inset-bottom,0px));m
 /* 아바타 / 모달 / 토스트 */
 .avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-display);font-size:19px;color:#2B190C;flex:none;box-shadow:0 0 0 1px rgba(255,255,255,.08)}
 .modal-bg{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center;animation:fade .2s both}
-.modal{width:100%;max-width:560px;max-height:92vh;overflow-y:auto;background:var(--bg-2);border-top:1px solid var(--line-2);border-radius:24px 24px 0 0;padding:16px 20px calc(24px + env(safe-area-inset-bottom,0px));animation:up .3s cubic-bezier(.2,.9,.3,1.1) both}
+.modal{position:relative;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;background:var(--bg-2);border-top:1px solid var(--line-2);border-radius:24px 24px 0 0;padding:16px 20px calc(24px + env(safe-area-inset-bottom,0px));animation:up .3s cubic-bezier(.2,.9,.3,1.1) both}
 .modal h3{font-size:22px;margin-bottom:6px}
 .grab{width:40px;height:4px;border-radius:3px;background:var(--line-2);margin:0 auto 16px}
 .go-card{text-align:center;padding:10px 0 4px}
@@ -777,12 +777,12 @@ function openGo(id, kind = 'plain', extra = '') {
   // 요청한 종류의 첫마디를 맨 위로
   const order = { keyword: OPENERS.keyword.slice(0, 2), topic: '‘', compat: '우리', score: '이름 점수' };
   openers.sort((a, b) => (b.startsWith(order[kind] || '\u0001') ? 1 : 0) - (a.startsWith(order[kind] || '\u0001') ? 1 : 0));
-  openModal(`<div class="go-card">${avatar(p, 64)}<div class="eyebrow">Go find</div><div class="nm">${esc(p.display)}</div><div class="muted">${esc(p.intro)}</div>
+  openModal(`<button class="icon-btn" id="goClose" aria-label="닫기" style="position:absolute;top:14px;right:16px">✕</button><div class="go-card">${avatar(p, 64)}<div class="eyebrow">Go find</div><div class="nm">${esc(p.display)}</div><div class="muted">${esc(p.intro)}</div>
       <div class="hint">${p.hint ? `<div class="k">찾는 힌트</div><div class="v">${esc(p.hint)}</div>` : `<div class="k">힌트 없음</div><div class="v" style="font-size:18px;color:var(--fg-2)">명찰에서 <b style="color:var(--brass-2)">#${esc(p.keywords?.[0] || '?')}</b> 를 찾아보세요</div>`}</div>
       ${kwChips(p, ov)}
       <div class="eyebrow dim" style="margin:18px 0 8px;text-align:left">이렇게 말 걸어 보세요</div>
       <div class="openers">${openers.slice(0, 3).map(o => `<div class="o">${esc(o)}</div>`).join('')}</div>
-      <button class="btn block" id="goClose" style="margin-top:18px">찾으러 갈게요</button></div>`);
+      <div class="dim" style="margin-top:16px">이 카드는 나만 보여요. 힌트를 보고 직접 찾아가세요</div></div>`);
   $('#goClose').onclick = closeModal;
 }
 function openSettings() {
