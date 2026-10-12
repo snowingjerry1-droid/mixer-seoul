@@ -297,14 +297,15 @@ const QUICK_ALL = new Set(QUICK_QUESTIONS.flatMap(x => x.a));
 
 // 추천 키워드 (20대·대학생 기준, 순서대로 칩으로 표시)
 const SUGGEST_KEYWORDS = [
-  '러닝','헬스','클라이밍','필라테스','축구','농구','테니스','수영','자전거','등산','캠핑',
-  '즉흥여행','계획여행','유럽여행','제주','맛집탐방','카페투어','커피덕후','디저트','홈쿡','편의점요리','술약','와인','위스키',
+  '러닝','헬스','클라이밍','등산','캠핑','축구','테니스','자전거',
+  '맛집탐방','카페투어','커피덕후','디저트','홈쿡','술약','와인',
   '고양이집사','강아지집사','식물키우기',
-  '넷플릭스','영화관','드라마정주행','예능덕후','유튜브','게임','롤','보드게임','방탈출',
-  '독서','전시회','뮤지컬','콘서트','페스티벌','사진','필름카메라','음악','플레이리스트','밴드','노래방','춤',
-  '패션','빈티지','덕질','K-pop','애니','웹툰',
-  '아침형','야행성','운동초보','자취생','본가살이','취준생','공시생','창업','사이드프로젝트','E형','I형',
+  '넷플릭스','영화관','예능덕후','게임','보드게임','방탈출',
+  '독서','전시회','콘서트','페스티벌','사진','음악','노래방',
+  '패션','덕질','K-pop','웹툰','자취생','취준생','창업',
 ];
+const WALL_MAX = 24;      // 키워드 벽에 띄우는 최대 키워드 수 (많이 고른 순)
+const MATCH_MAX = 10;     // 나랑 통하는 사람 최대 표시 인원
 
 // 궁합 결과 문구 (점수 내림차순, 첫 번째로 맞는 구간 사용)
 const COMPAT_PHRASES = [
@@ -682,26 +683,28 @@ function spotlightHTML(p) {
 }
 function renderHome() {
   const me = state.me;
-  const matches = others().map(p => ({ p, ov: overlap(me, p) })).filter(x => x.ov.length).sort((a, b) => b.ov.length - a.ov.length);
+  // 관심사 키워드(직접 고른 것) 겹침을 우선, 성향 답은 보조. 관심사 1개 이상 또는 성향 4개 이상 겹칠 때만 표시
+  const matches = others().map(p => { const ov = overlap(me, p); const it = ov.filter(k => !QUICK_ALL.has(k)); const qk = ov.filter(k => QUICK_ALL.has(k)); return { p, ov: [...it, ...qk], it: it.length, qk: qk.length }; })
+    .filter(x => x.it >= 1 || x.qk >= 4).sort((a, b) => (b.it * 3 + b.qk) - (a.it * 3 + a.qk)).slice(0, MATCH_MAX);
   return `<div id="spotWrap">${spotlightHTML(spotlightPick())}</div>
     <div class="card tight me-card">${avatar(me)}<div style="flex:1;min-width:0"><div class="name" style="font-size:17px">${esc(me.display)} <span class="dim">나</span></div><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(me.keywords || []).map(k => '#' + esc(k)).join(' ')}${me.hint ? ` · 📍 ${esc(me.hint)}` : ''}</div></div><button class="btn sm ghost" id="editMe">수정</button></div>
     <div class="banner">🕯️ 여기서 보고, 가서 말 거세요. 쪽지는 없어요. 힌트를 보고 직접 찾아가는 게 이 앱의 전부예요.</div>
-    <div class="section"><div class="section-title"><h2>나랑 통하는 사람</h2><span class="sub">겹치는 키워드 순</span></div>
+    <div class="section"><div class="section-title"><h2>나랑 통하는 사람</h2><span class="sub">관심사 겹침 순 · 최대 ${MATCH_MAX}명</span></div>
       ${matches.length ? matches.map(({ p, ov }) => personCard(p, { highlight: ov, line: `<b>#${esc(ov[0])}</b>${ov.length > 1 ? ` 외 ${ov.length - 1}개` : ''} 이(가) 겹쳐요. 찾아가서 말 걸어 보세요`, go: 'keyword', extra: ov[0] })).join('') : `<div class="empty">아직 키워드가 겹치는 사람이 없어요.<br>키워드 벽에서 비슷한 사람을 찾아보세요.</div>`}
     </div>
     `;
 }
 function renderWall() {
   const counts = {};
-  state.profiles.forEach(p => (p.keywords || []).forEach(k => { const n = norm(k); if (n) counts[n] = (counts[n] || 0) + 1; }));
-  const list = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  state.profiles.forEach(p => (p.keywords || []).forEach(k => { const n = norm(k); if (n && !QUICK_ALL.has(n)) counts[n] = (counts[n] || 0) + 1; }));
+  const list = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, WALL_MAX);
   const mine = new Set((state.me.keywords || []).map(norm));
   const max = list[0]?.[1] || 1;
   const chips = list.map(([k, n], i) => { const sz = 14 + Math.round((n / max) * 18); return `<span class="kw c${i % 5} ${mine.has(k) ? 'mine' : ''}" data-wall="${esc(k)}" style="font-size:${sz}px;--d:${(3.2 + (hashStr(k) % 20) / 10).toFixed(1)}s;--dl:-${(hashStr(k) % 30) / 10}s;--r:${((hashStr(k) % 7) - 3)}deg">#${esc(k)}<small>${n}</small></span>`; });
   for (let i = chips.length - 1; i > 0; i--) { const j = hashStr('s' + i) % (i + 1);[chips[i], chips[j]] = [chips[j], chips[i]]; }
   const sel = state.wallKw;
   const people = sel ? state.profiles.filter(p => (p.keywords || []).map(norm).includes(sel)) : [];
-  return `<div class="section" style="margin-top:8px"><div class="section-title"><h2>키워드 벽</h2><span class="sub">tap to find</span></div>
+  return `<div class="section" style="margin-top:8px"><div class="section-title"><h2>키워드 벽</h2><span class="sub">많이 고른 순 ${list.length}개</span></div>
     <div class="cloud">${chips.join('') || '<span class="muted">아직 키워드가 없어요</span>'}</div></div>
     ${sel ? `<div class="section"><div class="section-title"><h2>#${esc(sel)} <span style="font-size:14px;color:var(--fg-3);font-family:var(--font-body);font-weight:500">${people.length}명</span></h2><button class="btn sm ghost" id="wallClear">닫기</button></div>
       ${people.map(p => p.id === state.me.id ? `<div class="card tight"><div class="row" style="flex-wrap:nowrap">${avatar(p)}<div style="min-width:0"><div class="name" style="font-size:17px">${esc(p.display)} <span class="dim">나</span></div><div class="muted">${esc(p.intro)}</div></div></div></div>` : personCard(p, { highlight: [sel], btnText: '정보 더보기', go: 'keyword', extra: sel })).join('')}</div>` : ''}`;
@@ -726,7 +729,7 @@ function renderCompat() {
     <div id="compatStage">${sel ? `<div class="card"><div class="vs">${esc(state.me.display)} <span class="x">✕</span> ${esc(sel.display)}</div><div style="margin-top:12px"><button class="btn block marble" id="compatRun">궁합 계산 시작</button></div></div>` : ''}</div>
   </div>
   <div class="section"><div class="section-title"><h2>나의 콤비 랭킹</h2><span class="sub">${esc(state.me.display)} 기준 · 자동 집계</span></div>
-    <div class="rank-list">${mine.length ? mine.slice(0, 10).map((c, i) => `<div class="item"><span class="no">${i + 1}</span>${avatar(c.p, 34)}<div class="who"><div class="name">${esc(c.p.display)}</div><div class="dim">${esc(compatPhrase(c.pct))}${c.p.hint ? ` · 📍 ${esc(c.p.hint)}` : ''}</div></div><span class="pct">${c.pct}%</span><button class="btn sm ghost" data-go="${c.p.id}" data-kind="compat" data-extra="${c.pct}">더보기</button></div>`).join('') : '<div class="empty">다른 참석자가 들어오면 보여요</div>'}</div></div>
+    <div class="rank-list">${mine.length ? mine.slice(0, 5).map((c, i) => `<div class="item"><span class="no">${i + 1}</span>${avatar(c.p, 34)}<div class="who"><div class="name">${esc(c.p.display)}</div><div class="dim">${esc(compatPhrase(c.pct))}${c.p.hint ? ` · 📍 ${esc(c.p.hint)}` : ''}</div></div><span class="pct">${c.pct}%</span><button class="btn sm ghost" data-go="${c.p.id}" data-kind="compat" data-extra="${c.pct}">더보기</button></div>`).join('') : '<div class="empty">다른 참석자가 들어오면 보여요</div>'}</div></div>
   <div class="section"><div class="section-title"><h2>오늘의 환상의 콤비 TOP 5</h2><span class="sub">참석자 전원 · 자동 집계</span></div>
     <div class="rank-list">${top.length ? top.map((c, i) => `<div class="item ${c.a.id === state.me.id || c.b.id === state.me.id ? 'me' : ''}"><span class="no">${i + 1}</span><div class="who"><div class="name">${esc(c.a.display)} ✕ ${esc(c.b.display)}</div><div class="dim">${esc(compatPhrase(c.pct))}</div></div><span class="pct">${c.pct}%</span></div>`).join('') : '<div class="empty">두 명 이상 등록되면 보여요</div>'}</div></div>`;
 }
@@ -860,8 +863,8 @@ async function startScreenMode() {
   let idx = 0;
   const panels = [
     () => {
-      const counts = {}; state.profiles.forEach(p => (p.keywords || []).forEach(k => { const n = norm(k); if (n) counts[n] = (counts[n] || 0) + 1; }));
-      const list = Object.entries(counts).sort((a, b) => b[1] - a[1]); const max = list[0]?.[1] || 1;
+      const counts = {}; state.profiles.forEach(p => (p.keywords || []).forEach(k => { const n = norm(k); if (n && !QUICK_ALL.has(n)) counts[n] = (counts[n] || 0) + 1; }));
+      const list = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, WALL_MAX); const max = list[0]?.[1] || 1;
       const chips = list.map(([k, n], i) => `<span class="kw c${i % 5}" style="font-size:min(${28 + Math.round((n / max) * 48)}px, ${(3 + (n / max) * 5).toFixed(1)}vh);--d:${(3.2 + (hashStr(k) % 20) / 10).toFixed(1)}s;--dl:-${(hashStr(k) % 30) / 10}s;--r:${((hashStr(k) % 7) - 3)}deg">#${esc(k)}<small style="font-size:.5em;opacity:.6"> ${n}</small></span>`);
       for (let i = chips.length - 1; i > 0; i--) { const j = hashStr('s' + i) % (i + 1);[chips[i], chips[j]] = [chips[j], chips[i]]; }
       return `<h2>키워드 벽</h2><div class="sc-cloud">${chips.join('') || '<span style="font-size:40px;color:var(--fg-2)">첫 번째로 등록해 보세요</span>'}</div>`;
