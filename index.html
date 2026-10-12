@@ -687,7 +687,7 @@ function renderHome() {
   const matches = others().map(p => { const ov = overlap(me, p); const it = ov.filter(k => !QUICK_ALL.has(k)); const qk = ov.filter(k => QUICK_ALL.has(k)); return { p, ov: [...it, ...qk], it: it.length, qk: qk.length }; })
     .filter(x => x.it >= 1 || x.qk >= 4).sort((a, b) => (b.it * 3 + b.qk) - (a.it * 3 + a.qk)).slice(0, MATCH_MAX);
   return `<div id="spotWrap">${spotlightHTML(spotlightPick())}</div>
-    <div class="card tight me-card">${avatar(me)}<div style="flex:1;min-width:0"><div class="name" style="font-size:17px">${esc(me.display)} <span class="dim">나</span></div><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(me.keywords || []).map(k => '#' + esc(k)).join(' ')}${me.hint ? ` · 📍 ${esc(me.hint)}` : ''}</div></div><button class="btn sm ghost" id="editMe">수정</button></div>
+    <div class="card tight me-card">${avatar(me)}<div style="flex:1;min-width:0"><div class="name" style="font-size:17px">${esc(me.display)} <span class="dim">나</span></div><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(me.keywords || []).map(k => '#' + esc(k)).join(' ')}${me.hint ? ` · 📍 ${esc(me.hint)}` : ''}</div></div><button class="btn sm ghost" id="editMe">📍 위치 · 수정</button></div>
     <div class="banner">🕯️ 여기서 보고, 가서 말 거세요. 쪽지는 없어요. 힌트를 보고 직접 찾아가는 게 이 앱의 전부예요.</div>
     <div class="section"><div class="section-title"><h2>나랑 통하는 사람</h2><span class="sub">관심사 겹침 순 · 최대 ${MATCH_MAX}명</span></div>
       ${matches.length ? matches.map(({ p, ov }) => personCard(p, { highlight: ov, line: `<b>#${esc(ov[0])}</b>${ov.length > 1 ? ` 외 ${ov.length - 1}개` : ''} 이(가) 겹쳐요. 찾아가서 말 걸어 보세요`, go: 'keyword', extra: ov[0] })).join('') : `<div class="empty">아직 키워드가 겹치는 사람이 없어요.<br>키워드 벽에서 비슷한 사람을 찾아보세요.</div>`}
@@ -828,17 +828,42 @@ function openSettings() {
   const m = openModal(`<h3>내 정보</h3>
     <div class="card tight" style="margin-top:10px"><div class="row" style="flex-wrap:nowrap">${avatar(me)}<div style="min-width:0"><div class="name" style="font-size:17px">${esc(me.display)}</div><div class="muted">${esc(me.intro)}</div></div></div>
       <div class="hint-line"><span class="k">Find</span><span class="v">${me.hint ? esc(me.hint) : '<span class="dim">힌트 없음</span>'}</span></div></div>
-    <div class="muted" style="margin:6px 0 12px">힌트(옷차림·자리)를 적어 두면 사람들이 나를 찾아오기 쉬워요.</div>
-    <button class="btn block" id="editMe2">이름 · 소개 · 키워드 · 힌트 수정</button>
-    <div class="dim" style="text-align:center;margin-top:12px">기기 ID ${esc(deviceId().slice(0, 8))}… · 입장 ${state.profiles.length}명</div>
-    <button class="btn block ghost" id="settingsClose" style="margin-top:10px">닫기</button>`);
-  $('#editMe2', m).onclick = () => { closeModal(); showRegister(true); };
+    <div class="stack" style="margin-top:12px">
+      <button class="btn block" id="editHint">📍 지금 위치만 바꾸기</button>
+      <div class="dim" style="text-align:center">자리를 옮겼을 때. 10초면 끝나요</div>
+      <button class="btn block ghost" id="editAll">전체 수정하기</button>
+      <div class="dim" style="text-align:center">이름 · 소개 · 키워드 · 성향 · 하고 싶은 얘기</div>
+    </div>
+    <button class="btn block ghost" id="settingsClose" style="margin-top:16px">닫기</button>`);
+  $('#editHint', m).onclick = () => { closeModal(); openHintEditor(); };
+  $('#editAll', m).onclick = () => { closeModal(); showRegister(true); };
   $('#settingsClose', m).onclick = closeModal;
+}
+// 지금 위치(찾는 힌트)만 빠르게 바꾸기
+function openHintEditor() {
+  const me = state.me;
+  const m = openModal(`<h3>지금 어디에 있어요?</h3><div class="muted" style="margin-bottom:10px">옷차림이나 지금 자리. 20자 이내. 사람들이 이걸 보고 찾아와요.</div>
+    <input class="field" id="hintInput" maxlength="20" placeholder="예: 바 근처, 검은 옷" value="${esc(me.hint || '')}" autocomplete="off" enterkeyhint="done">
+    <div class="eyebrow dim" style="margin:10px 0 8px">눌러서 채우기</div>
+    <div class="chips">${HINT_EXAMPLES.map(x => `<span class="chip ${me.hint === x ? 'sel' : ''}" data-hx="${esc(x)}">${esc(x)}</span>`).join('')}</div>
+    <div class="row" style="margin-top:16px;flex-wrap:nowrap"><button class="btn ghost" id="hintCancel" style="flex:1">취소</button><button class="btn" id="hintSave" style="flex:2">저장</button></div>`);
+  const inp = $('#hintInput', m);
+  m.querySelectorAll('[data-hx]').forEach(c => c.onclick = () => { inp.value = c.dataset.hx; m.querySelectorAll('[data-hx]').forEach(x => x.classList.toggle('sel', x === c)); });
+  const save = async () => {
+    const b = $('#hintSave', m); b.disabled = true;
+    const hint = inp.value.trim().slice(0, 20);
+    const { error } = await sb.from('mingle_profiles').update({ hint }).eq('id', me.id);
+    if (error) { b.disabled = false; toast('저장하지 못했어요', error.message, { icon: '⚠️' }); return; }
+    me.hint = hint; closeModal(); toast('위치를 바꿨어요', hint ? `지금: ${hint}` : '힌트를 비웠어요', { icon: '📍', ms: 2500 }); refresh(true);
+  };
+  $('#hintSave', m).onclick = save;
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } });
+  $('#hintCancel', m).onclick = closeModal;
 }
 function bindView() {
   const v = $('#view');
   v.querySelectorAll('[data-go]').forEach(b => b.onclick = () => openGo(b.dataset.go, b.dataset.kind, b.dataset.extra));
-  const edit = $('#editMe'); if (edit) edit.onclick = () => showRegister(true);
+  const edit = $('#editMe'); if (edit) edit.onclick = openSettings;
   v.querySelectorAll('[data-wall]').forEach(k => k.onclick = () => { state.wallKw = k.dataset.wall; render(); setTimeout(() => { const s = v.querySelectorAll('.section')[1]; s && s.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50); });
   const wc = $('#wallClear'); if (wc) wc.onclick = () => { state.wallKw = null; render(); };
   const bindPicks = () => v.querySelectorAll('[data-pick]').forEach(c => c.onclick = () => { state.compatWith = c.dataset.pick; state.busy = false; render(); setTimeout(() => $('#compatStage')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); });
