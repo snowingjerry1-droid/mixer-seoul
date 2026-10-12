@@ -242,7 +242,16 @@ body.screen{overflow:hidden}
 .sc-gate-sub{font-size:clamp(18px,3vh,30px);color:var(--fg-2);line-height:1.5;margin-top:10px}
 .sc-gate-cnt{margin-top:clamp(16px,4vh,40px);font-size:clamp(22px,3.6vh,36px);color:var(--fg)}
 .sc-gate-cnt b{font-family:var(--font-display);font-size:clamp(48px,11vh,110px);color:var(--brass-2);text-shadow:0 0 30px var(--glow);margin-right:8px}
-.sc-spot{text-align:center;position:relative;transition:opacity .25s}
+.sc-spot{text-align:center;position:relative}
+.sc-person{animation:personIn .55s cubic-bezier(.2,.9,.3,1.1) both;display:flex;flex-direction:column;align-items:center;gap:clamp(6px,1.4vh,14px)}
+@keyframes personIn{from{opacity:0;transform:translateX(60px) scale(.96)}to{opacity:1;transform:none}}
+.sc-pav{width:clamp(70px,13vh,120px);height:clamp(70px,13vh,120px);border-radius:50%;display:grid;place-items:center;font-family:var(--font-display);font-size:clamp(34px,6.5vh,60px);color:#2B190C;box-shadow:0 0 0 6px rgba(255,255,255,.08),0 0 40px var(--pc,var(--glow))}
+.sc-pname{font-family:var(--font-display);font-weight:700;font-size:clamp(48px,11vh,104px);line-height:1.1;color:var(--fg)}
+.sc-pintro{font-family:var(--font-display);font-size:clamp(26px,5vh,48px);line-height:1.3;color:var(--fg-2)}
+.sc-pmeta{font-size:clamp(16px,2.6vh,26px);color:var(--fg-2)}
+.sc-pkw{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;font-size:clamp(14px,2.2vh,22px)}
+.sc-pkw span{border:1px solid var(--line-2);border-radius:999px;padding:4px 14px;color:var(--peach)}
+.sc-pcount{position:fixed;right:44px;bottom:18px;font-size:clamp(12px,1.8vh,18px);color:var(--fg-3);letter-spacing:.1em}
 .sc-spot .txt{font-family:var(--font-display);font-size:clamp(36px,8.5vh,80px);line-height:1.3;color:var(--fg)}
 .sc-spot .who{font-size:clamp(18px,3.4vh,32px);color:var(--fg-2);margin-top:clamp(12px,2.8vh,26px)}
 .sc-spot .kw{margin-top:18px;display:flex;justify-content:center;gap:12px;font-size:clamp(16px,2.6vh,24px);flex-wrap:wrap}
@@ -286,8 +295,9 @@ const SUPABASE_URL = 'https://nbmetyvgkzmmcfwkyhba.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ibWV0eXZna3ptbWNmd2t5aGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3OTQ2MDAsImV4cCI6MjEwNzM3MDYwMH0.WIpx6o_bLIG2Ik16Jje9qwYwZUtmluvX691wKKBcT6Y';
 const POLL_MS = 4000;          // 새로고침 간격
 const SPOTLIGHT_MS = 30000;    // 스포트라이트 교체 간격
-const SCREEN_ROTATE_MS = 10000;// 큰 화면 모드 순환 간격
-const SCREEN_SPOT_MS = 3000;   // 큰 화면 스포트라이트에서 사람이 바뀌는 간격
+const SCREEN_RANK_MS = 5000;   // 큰 화면: 랭킹 패널(이름 점수·콤비) 표시 시간
+const SCREEN_SPOT_MS = 5000;   // 큰 화면: 스포트라이트 한 사람 표시 시간
+const SCREEN_SPOT_PEOPLE = 6;  // 큰 화면: 스포트라이트 한 차례에 보여 줄 인원
 
 // 등록 질문 예시 칩 (탭하면 입력칸에 채워지고, 고쳐 쓸 수 있음)
 const INTRO_EXAMPLES = ['요즘 빵에 푹 빠진 사람','주말엔 무조건 집','커피 없으면 못 사는 사람','과제 미루고 넷플릭스 보는 중','헬스 끊고 3일 간 사람','자취 요리 도전 중','카페 투어가 취미','밤에 더 살아나는 야행성','즉흥으로 떠나는 거 좋아해요','덕질이 삶의 원동력','새로운 사람 만나는 거 좋아해요','조용히 듣는 게 편한 사람','사진 찍는 게 제일 재밌어요','요즘 러닝 시작했어요','플레이리스트 만드는 게 취미','방탈출 성공률 높은 편'];
@@ -936,50 +946,49 @@ async function startScreenMode() {
       <div class="join"><div class="txt"><div class="t1">지금 들어와서 등록하세요</div><div class="t2">${esc(joinUrl.replace(/^https?:\/\//, ''))}</div><div class="cnt"><span id="scCount">0</span>명 입장</div></div><div id="qr"></div></div></div>
     <div class="sc-body"><div class="sc-panel" id="scPanel"></div></div><div class="sc-progress" id="scProg"></div>`;
   try { new QRCode($('#qr'), { text: joinUrl, width: 130, height: 130, correctLevel: QRCode.CorrectLevel.M }); } catch (e) { }
-  let idx = 0;
-  const panels = [
-    () => {
-      const counts = {}; state.profiles.forEach(p => (p.keywords || []).forEach(k => { const n = norm(k); if (n && !QUICK_ALL.has(n)) counts[n] = (counts[n] || 0) + 1; }));
-      const list = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, WALL_MAX); const max = list[0]?.[1] || 1;
-      const chips = list.map(([k, n], i) => `<span class="kw c${i % 5}" style="font-size:min(${28 + Math.round((n / max) * 48)}px, ${(3 + (n / max) * 5).toFixed(1)}vh);--d:${(3.2 + (hashStr(k) % 20) / 10).toFixed(1)}s;--dl:-${(hashStr(k) % 30) / 10}s;--r:${((hashStr(k) % 7) - 3)}deg">#${esc(k)}<small style="font-size:.5em;opacity:.6"> ${n}</small></span>`);
-      for (let i = chips.length - 1; i > 0; i--) { const j = hashStr('s' + i) % (i + 1);[chips[i], chips[j]] = [chips[j], chips[i]]; }
-      return `<h2>키워드 벽</h2><div class="sc-cloud">${chips.join('') || '<span style="font-size:40px;color:var(--fg-2)">첫 번째로 등록해 보세요</span>'}</div>`;
-    },
-    () => {
-      const ranked = scoreRanking().slice(0, 10);
-      return `<h2>이름 점수 TOP 10</h2><div class="sc-rank">${ranked.map((x, i) => `<div class="it"><span class="no">${i + 1}</span><div><div>${esc(x.p.display)}</div><div class="sub">${esc(x.s.title)}</div></div><span class="sc">${x.s.score}</span></div>`).join('') || '<div style="font-size:36px;color:var(--fg-2)">아직 등록한 사람이 없어요</div>'}</div>`;
-    },
-    () => {
-      const top = allPairs().slice(0, 5);
-      return `<h2>오늘의 환상의 콤비 TOP 5</h2><div class="sc-rank" style="grid-template-columns:1fr">${top.map((c, i) => `<div class="it"><span class="no">${i + 1}</span><div><div>${esc(c.a.display)} ✕ ${esc(c.b.display)}</div><div class="sub">${esc(compatPhrase(c.pct))}</div></div><span class="sc">${c.pct}%</span></div>`).join('') || '<div style="font-size:36px;color:var(--fg-2)">두 명 이상 등록되면 보여요</div>'}</div>`;
-    },
-    () => `<h2>오늘 밤, 이런 사람들이 와 있어요</h2><div class="sc-spot" id="scSpotBody">${spotInner()}</div>`,
-  ];
-  let lastSpot = null;
-  const spotInner = () => {
-    const pool = state.profiles.filter(p => p.intro && p.id !== lastSpot); if (!pool.length) return `<div class="txt" style="color:var(--fg-2)">등록하면 여기에 소개가 떠요</div>`;
-    const p = pickRandom(pool); lastSpot = p.id;
-    return `<div class="txt">“${esc(p.intro)}”</div><div class="who">${esc(p.display)}${p.topic ? ` · ${esc(p.topic)}` : ''}${p.hint ? ` · 📍 ${esc(p.hint)}` : ''}</div><div class="kw">${(p.keywords || []).filter(k => !QUICK_ALL.has(k)).map(k => `<span>#${esc(k)}</span>`).join('')}</div>`;
+  // 순환: 스포트라이트(한 사람 5초 × 6명) → 이름 점수 TOP 10(5초) → 콤비 TOP 5(5초)
+  let lastSpot = null, spotTimer = null, rotateTimer = null, idx = 0;
+  const pickSpot = () => { const pool = state.profiles.filter(p => p.intro && p.id !== lastSpot); if (!pool.length) return null; const p = pickRandom(pool); lastSpot = p.id; return p; };
+  const personHTML = (p, n) => {
+    if (!p) return `<div class="sc-person"><div class="sc-pname" style="font-size:clamp(28px,5vh,48px);color:var(--fg-2)">등록하면 여기에 소개가 떠요</div></div>`;
+    const c = AVATAR_COLORS[hashStr(p.name || '') % AVATAR_COLORS.length];
+    return `<div class="sc-person" style="--pc:${c}">
+      <div class="sc-pav" style="background:${c}">${esc(chars(p.name)[0] || '?')}</div>
+      <div class="sc-pname">${esc(p.display)}</div>
+      <div class="sc-pintro">“${esc(p.intro)}”</div>
+      <div class="sc-pmeta">${p.topic ? `💬 ${esc(p.topic)}` : ''}${p.topic && p.hint ? ' · ' : ''}${p.hint ? `📍 ${esc(p.hint)}` : ''}</div>
+      <div class="sc-pkw">${(p.keywords || []).filter(k => !QUICK_ALL.has(k)).map(k => `<span>#${esc(k)}</span>`).join('')}</div>
+      <div class="sc-pcount">${n} / ${SCREEN_SPOT_PEOPLE}</div></div>`;
   };
-  let spotTimer = null;
+  const panels = [
+    { ms: SCREEN_SPOT_MS * SCREEN_SPOT_PEOPLE, render: () => `<h2>오늘 밤, 이런 사람들이 와 있어요</h2><div class="sc-spot" id="scSpotBody">${personHTML(pickSpot(), 1)}</div>`,
+      after: () => { let n = 1; spotTimer = setInterval(() => { const el = $('#scSpotBody'); if (!el) return; n++; if (n > SCREEN_SPOT_PEOPLE) return; el.innerHTML = personHTML(pickSpot(), n); }, SCREEN_SPOT_MS); } },
+    { ms: SCREEN_RANK_MS, render: () => {
+      const ranked = scoreRanking().slice(0, 10);
+      return `<h2>이름 점수 TOP 10</h2><div class="sc-rank">${ranked.map((x, i) => `<div class="it"><span class="no">${i + 1}</span><div><div>${esc(x.p.display)}</div><div class="sub">${esc(x.s.title)}</div></div><span class="sc">${x.s.score}</span></div>`).join('') || '<div style="font-size:36px;color:var(--fg-2)">아직 등록한 사람이 없어요</div>'}</div>`; } },
+    { ms: SCREEN_RANK_MS, render: () => {
+      const top = allPairs().slice(0, 5);
+      return `<h2>오늘의 환상의 콤비 TOP 5</h2><div class="sc-rank" style="grid-template-columns:1fr">${top.map((c, i) => `<div class="it"><span class="no">${i + 1}</span><div><div>${esc(c.a.display)} ✕ ${esc(c.b.display)}</div><div class="sub">${esc(compatPhrase(c.pct))}</div></div><span class="sc">${c.pct}%</span></div>`).join('') || '<div style="font-size:36px;color:var(--fg-2)">두 명 이상 등록되면 보여요</div>'}</div>`; } },
+  ];
   const gatePanel = () => `<div class="sc-gate"><div class="eyebrow" style="font-size:clamp(14px,2.2vh,20px)">Now registering</div>
       <h2 style="margin:10px 0 6px">QR을 찍고 등록해 주세요</h2>
       <div class="sc-gate-sub">이름 · 키워드 · 지금 위치까지 2분이면 끝나요</div>
       <div class="sc-gate-cnt"><b>${state.profiles.length}</b>명 등록 완료</div></div>`;
   const show = () => {
+    clearInterval(spotTimer); clearTimeout(rotateTimer);
     const panel = $('#scPanel'); panel.style.animation = 'none'; void panel.offsetWidth; panel.style.animation = '';
-    clearInterval(spotTimer);
-    if (!state.open) { panel.innerHTML = gatePanel(); const prog = $('#scProg'); prog.style.transition = 'none'; prog.style.width = '0'; return; }
-    const which = idx % panels.length; panel.innerHTML = panels[which](); idx++;
-    if (which === panels.length - 1) spotTimer = setInterval(() => { const el = $('#scSpotBody'); if (!el) return; el.style.opacity = 0; setTimeout(() => { el.innerHTML = spotInner(); el.style.opacity = 1; }, 250); }, SCREEN_SPOT_MS);
-    const prog = $('#scProg'); prog.style.transition = 'none'; prog.style.width = '0'; void prog.offsetWidth; prog.style.transition = `width ${SCREEN_ROTATE_MS}ms linear`; prog.style.width = '100%';
+    const prog = $('#scProg');
+    if (!state.open) { panel.innerHTML = gatePanel(); prog.style.transition = 'none'; prog.style.width = '0'; return; }
+    const which = idx % panels.length; const pn = panels[which]; idx++;
+    panel.innerHTML = pn.render(); if (pn.after) pn.after();
+    prog.style.transition = 'none'; prog.style.width = '0'; void prog.offsetWidth; prog.style.transition = `width ${pn.ms}ms linear`; prog.style.width = '100%';
+    rotateTimer = setTimeout(show, pn.ms);
   };
   await Promise.all([fetchProfiles(), fetchState()]); $('#scCount').textContent = state.profiles.length; show();
   let wasOpen = state.open;
   setInterval(async () => { await Promise.all([fetchProfiles(), fetchState()]); $('#scCount').textContent = state.profiles.length;
     if (!state.open) { const b = $('.sc-gate-cnt b'); if (b) b.textContent = state.profiles.length; }
     if (state.open !== wasOpen) { wasOpen = state.open; idx = 0; show(); if (state.open) sparks(80); } }, POLL_MS);
-  setInterval(() => { if (state.open) show(); }, SCREEN_ROTATE_MS);
   keepAwake();
 }
 
