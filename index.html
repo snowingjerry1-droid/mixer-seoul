@@ -129,6 +129,9 @@ main#view{flex:1;padding:8px 18px calc(92px + env(safe-area-inset-bottom,0px));m
 .nametag{background:var(--bg);border:1px solid var(--brass);border-radius:14px;padding:18px;text-align:center;margin:18px 0;position:relative}
 .nametag::before{content:"";position:absolute;inset:5px;border:1px solid var(--line-2);border-radius:10px;pointer-events:none}
 .nametag .nm{font-family:var(--font-display);font-size:30px}
+.wait-pulse{display:inline-flex;align-items:center;gap:8px;margin-top:16px;padding:8px 14px;border-radius:999px;border:1px solid var(--line-2);font-size:14px;color:var(--fg-2)}
+.wait-pulse span{width:8px;height:8px;border-radius:50%;background:var(--brass);box-shadow:0 0 10px var(--glow);animation:glow 1.6s ease-in-out infinite}
+#waiting{position:fixed;inset:0;z-index:35;background:var(--bg);overflow-y:auto;padding:calc(22px + env(safe-area-inset-top,0px)) 20px calc(22px + env(safe-area-inset-bottom,0px));background-image:radial-gradient(ellipse 80% 45% at 50% 0%, rgba(237,117,47,.16) 0, transparent 70%)}
 .nametag .kw{color:var(--peach);letter-spacing:.1em;font-size:14px;margin-top:4px;font-weight:700}
 
 /* 홈 */
@@ -234,6 +237,11 @@ body.screen{overflow:hidden}
 .sc-rank .it:nth-child(1) .no{color:var(--brass-2)}.sc-rank .it:nth-child(2) .no{color:#EAD7BC}.sc-rank .it:nth-child(3) .no{color:#C9956A}
 .sc-rank .sc{margin-left:auto;font-family:var(--font-display);font-size:clamp(20px,4vh,40px);color:var(--brass-2)}
 .sc-rank .sub{font-size:clamp(12px,1.9vh,19px);color:var(--fg-2)}
+.sc-gate{text-align:center}
+.sc-gate h2{font-size:clamp(36px,7vh,72px)}
+.sc-gate-sub{font-size:clamp(18px,3vh,30px);color:var(--fg-2);line-height:1.5;margin-top:10px}
+.sc-gate-cnt{margin-top:clamp(16px,4vh,40px);font-size:clamp(22px,3.6vh,36px);color:var(--fg)}
+.sc-gate-cnt b{font-family:var(--font-display);font-size:clamp(48px,11vh,110px);color:var(--brass-2);text-shadow:0 0 30px var(--glow);margin-right:8px}
 .sc-spot{text-align:center;position:relative}
 .sc-spot .txt{font-family:var(--font-display);font-size:clamp(36px,8.5vh,80px);line-height:1.3;color:var(--fg)}
 .sc-spot .who{font-size:clamp(18px,3.4vh,32px);color:var(--fg-2);margin-top:clamp(12px,2.8vh,26px)}
@@ -264,6 +272,7 @@ body.screen{overflow:hidden}
   </nav>
 </div>
 <div id="register" class="hidden"></div>
+<div id="waiting" class="hidden"></div>
 <div id="screenView" class="hidden"></div>
 <div id="adminView" class="hidden"></div>
 <div id="modalRoot"></div>
@@ -441,7 +450,7 @@ const ls = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) { } },
 };
-const state = { me: null, profiles: [], tab: 'home', busy: false, lastSig: '', wallKw: null, compatWith: null, compatQ: '' };
+const state = { me: null, profiles: [], tab: 'home', busy: false, lastSig: '', wallKw: null, compatWith: null, compatQ: '', open: false, openKnown: false };
 const params = new URLSearchParams(location.search);
 
 function deviceId() {
@@ -505,11 +514,29 @@ async function fetchProfiles() {
   if (!error && data) state.profiles = data;
   if (state.me && data) { state.me = byId(state.me.id) || null; }
 }
+async function fetchState() {
+  const { data, error } = await sb.from('mingle_state').select('open').eq('id', 1).maybeSingle();
+  if (!error && data) { state.open = !!data.open; state.openKnown = true; }
+}
 function updateCount() { $('#countPill').textContent = `${state.profiles.length}명 입장`; }
+// 게이트 상태에 맞춰 화면 전환 (등록된 사람만 해당)
+function applyGate(fromRefresh) {
+  if (!state.me) return;
+  const waiting = !$('#waiting').classList.contains('hidden');
+  const appShown = !$('#app').classList.contains('hidden');
+  if (state.open && !appShown && $('#register').classList.contains('hidden')) {
+    $('#waiting').classList.add('hidden'); $('#app').classList.remove('hidden'); render();
+    if (fromRefresh && waiting) { toast('문이 열렸어요!', '이제 사람들을 찾아보세요', { icon: '🎉', ms: 4000 }); sparks(50); }
+  } else if (!state.open && appShown) {
+    $('#app').classList.add('hidden'); closeModal(); showWaiting();
+  }
+}
 let refreshTimer = null;
 async function refresh(force) {
-  await fetchProfiles();
-  if (!state.me) { if (!$('#app').classList.contains('hidden')) { $('#app').classList.add('hidden'); showRegister(); } return; }
+  await Promise.all([fetchProfiles(), fetchState()]);
+  if (!state.me) { if (!$('#app').classList.contains('hidden') || !$('#waiting').classList.contains('hidden')) { $('#app').classList.add('hidden'); $('#waiting').classList.add('hidden'); showRegister(); } return; }
+  applyGate(true);
+  if (!state.open) { const c = $('#waitCount'); if (c) c.textContent = state.profiles.length; return; }
   updateCount();
   const sig = JSON.stringify(state.profiles);
   if (force || sig !== state.lastSig) { state.lastSig = sig; if (!state.busy) render(); }
@@ -518,7 +545,10 @@ function scheduleRefresh() { clearTimeout(refreshTimer); refreshTimer = setTimeo
 function startSync() {
   setInterval(() => refresh(), POLL_MS);
   try {
-    sb.channel('mixer-live').on('postgres_changes', { event: '*', schema: 'public', table: 'mingle_profiles' }, scheduleRefresh).subscribe();
+    sb.channel('mixer-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mingle_profiles' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mingle_state' }, scheduleRefresh)
+      .subscribe();
   } catch (e) { }
 }
 
@@ -633,9 +663,27 @@ function renderRegisterDone() {
     const card = $('#scoreReveal'); card.style.display = ''; card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     runSlot($('#regSlot'), ns.score, () => {
       $('#regReasons').innerHTML = reasonsHTML(ns);
-      const b = $('#regEnter'); b.style.display = ''; b.onclick = () => { $('#register').classList.add('hidden'); $('#app').classList.remove('hidden'); refresh(true); };
+      const b = $('#regEnter'); b.style.display = '';
+      if (!state.open) b.textContent = '등록 끝! 문이 열리면 알려 드릴게요';
+      b.onclick = () => { $('#register').classList.add('hidden'); if (state.open) { $('#app').classList.remove('hidden'); refresh(true); } else showWaiting(); };
     });
   }, 1600);
+}
+
+// 문이 열리기 전 대기 화면
+function showWaiting() {
+  const me = state.me; const root = $('#waiting'); root.classList.remove('hidden');
+  root.innerHTML = `<div class="reg-wrap" style="justify-content:center;text-align:center">
+    <div class="reg-head"><img class="logo" src="logo.png" alt="MIXER SEOUL"></div>
+    <div class="reg-card">
+      <div class="eyebrow">Registered</div>
+      <h2 style="font-size:24px;margin:8px 0 14px">등록 완료, 조금만 기다려 주세요</h2>
+      <div class="nametag"><div class="nm">${esc(me.display)}</div><div class="kw">#${esc(me.keywords?.[0] || '')}</div></div>
+      <div class="muted">명찰에 <b style="color:var(--peach)">#${esc(me.keywords?.[0] || '')}</b> 를 적어 두세요.<br>진행자가 문을 열면 이 화면이 <b style="color:var(--fg)">자동으로</b> 바뀌어요. 앱을 닫아도 괜찮아요.</div>
+      <div class="wait-pulse"><span></span>지금까지 <b id="waitCount">${state.profiles.length}</b>명 입장</div>
+      <button class="btn block ghost" id="waitEdit" style="margin-top:14px">📍 내 정보 · 위치 바꾸기</button>
+    </div></div>`;
+  $('#waitEdit').onclick = openSettings;
 }
 
 /* =========================================================
@@ -908,14 +956,22 @@ async function startScreenMode() {
       return `<h2>오늘의 스포트라이트</h2><div class="sc-spot"><div class="txt">“${esc(p.intro)}”</div><div class="who">${esc(p.display)}${p.topic ? ` · ${esc(p.topic)}` : ''}${p.hint ? ` · 📍 ${esc(p.hint)}` : ''}</div><div class="kw">${(p.keywords || []).map(k => `<span>#${esc(k)}</span>`).join('')}</div></div>`;
     },
   ];
+  const gatePanel = () => `<div class="sc-gate"><div class="eyebrow" style="font-size:clamp(14px,2.2vh,20px)">Now registering</div>
+      <h2 style="margin:10px 0 6px">QR을 찍고 등록해 주세요</h2>
+      <div class="sc-gate-sub">이름 · 키워드 · 지금 위치까지 2분이면 끝나요<br>문이 열리면 모두의 화면이 동시에 켜져요</div>
+      <div class="sc-gate-cnt"><b>${state.profiles.length}</b>명 등록 완료</div></div>`;
   const show = () => {
     const panel = $('#scPanel'); panel.style.animation = 'none'; void panel.offsetWidth; panel.style.animation = '';
+    if (!state.open) { panel.innerHTML = gatePanel(); const prog = $('#scProg'); prog.style.transition = 'none'; prog.style.width = '0'; return; }
     panel.innerHTML = panels[idx % panels.length](); idx++;
     const prog = $('#scProg'); prog.style.transition = 'none'; prog.style.width = '0'; void prog.offsetWidth; prog.style.transition = `width ${SCREEN_ROTATE_MS}ms linear`; prog.style.width = '100%';
   };
-  await fetchProfiles(); $('#scCount').textContent = state.profiles.length; show();
-  setInterval(async () => { await fetchProfiles(); $('#scCount').textContent = state.profiles.length; }, POLL_MS);
-  setInterval(show, SCREEN_ROTATE_MS);
+  await Promise.all([fetchProfiles(), fetchState()]); $('#scCount').textContent = state.profiles.length; show();
+  let wasOpen = state.open;
+  setInterval(async () => { await Promise.all([fetchProfiles(), fetchState()]); $('#scCount').textContent = state.profiles.length;
+    if (!state.open) { const b = $('.sc-gate-cnt b'); if (b) b.textContent = state.profiles.length; }
+    if (state.open !== wasOpen) { wasOpen = state.open; idx = 0; show(); if (state.open) sparks(80); } }, POLL_MS);
+  setInterval(() => { if (state.open) show(); }, SCREEN_ROTATE_MS);
   keepAwake();
 }
 
@@ -929,14 +985,17 @@ async function startAdminMode(pw) {
   if (error || !data?.ok) { root.innerHTML = `<div class="empty" style="margin-top:40px">비밀번호가 맞지 않아요.<br><span class="dim">주소 뒤 ?admin=비밀번호 를 확인해 주세요</span></div>`; return; }
   let resetStage = 0;
   const draw = async () => {
-    await fetchProfiles();
+    await Promise.all([fetchProfiles(), fetchState()]);
     root.innerHTML = `<div class="brand" style="margin-bottom:4px"><span class="lamp"></span><div><div class="nm">MIXER</div><div class="en">SEOUL · HOST</div></div></div><div class="muted" style="margin:10px 0 12px">입장 ${state.profiles.length}명</div>
+      <div class="card" style="border-color:${state.open ? 'var(--brass)' : 'var(--line-2)'}"><div class="spread"><div><div class="eyebrow">${state.open ? 'Open' : 'Closed'}</div><div style="font-weight:800;font-size:18px;margin-top:4px">${state.open ? '참가자 화면이 열려 있어요' : '지금은 등록만 받는 중'}</div><div class="muted">${state.open ? '모두가 홈·키워드 벽·궁합·이름점수를 보고 있어요' : '참가자는 등록 후 대기 화면만 봐요. 버튼을 누르면 모든 폰이 동시에 켜져요'}</div></div></div>
+        <button class="btn block ${state.open ? 'ghost' : ''}" id="gateBtn" style="margin-top:12px">${state.open ? '참가자 화면 닫기' : '🎉 참가자 화면 열기'}</button></div>
       <a class="btn block marble" href="${location.pathname}?screen=1" target="_blank" rel="noopener" style="margin-bottom:6px;text-decoration:none">대형 화면 모드 열기 ↗</a><div class="dim" style="margin-bottom:8px">새 탭에서 열려요. 그 탭을 프로젝터·TV 화면으로 옮기고 전체 화면(⌃⌘F 또는 F11)으로 두세요.</div>
       <div class="section"><div class="section-title"><h2>프로필</h2></div>${state.profiles.map(p => `<div class="admin-row">${avatar(p, 32)}<div style="min-width:0"><b>${esc(p.display)}</b> <span class="muted">${(p.keywords || []).map(k => '#' + esc(k)).join(' ')}</span><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.intro)} / ${esc(p.topic)} / 📍${esc(p.hint)}</div></div><button class="btn sm ghost x" data-delp="${p.id}">삭제</button></div>`).join('') || '<div class="empty">없음</div>'}</div>
       <div class="section"><div class="section-title"><h2>비밀번호 변경</h2></div><div class="row" style="gap:8px;flex-wrap:nowrap"><input class="field" id="newPw" placeholder="새 비밀번호 (4자 이상)" style="flex:1;min-width:0"><button class="btn sm ghost" id="setPw">변경</button></div></div>
       <div class="section"><div class="section-title"><h2>전체 데이터 초기화</h2></div><div class="card" style="border-color:#6B3A32"><div class="muted" style="margin-bottom:10px">프로필을 모두 지워요. 되돌릴 수 없어요.</div><button class="btn block" id="resetBtn" style="background:#B8513F;color:#fff">전체 초기화</button></div></div>`;
     const call = async (action, target) => { const { data } = await sb.rpc('mingle_admin', { pw, action, target: target == null ? null : String(target) }); if (!data?.ok) toast('실패', data?.error || '', { icon: '⚠️' }); };
     root.querySelectorAll('[data-delp]').forEach(b => b.onclick = async () => { b.disabled = true; await call('delete_profile', b.dataset.delp); draw(); });
+    $('#gateBtn').onclick = async () => { const b = $('#gateBtn'); b.disabled = true; await call(state.open ? 'close' : 'open'); toast(state.open ? '참가자 화면을 닫았어요' : '참가자 화면을 열었어요!', state.open ? '' : '모든 폰이 몇 초 안에 켜져요', { icon: state.open ? '🔒' : '🎉' }); draw(); };
     $('#setPw').onclick = async () => { const v = $('#newPw').value.trim(); if (v.length < 4) return toast('4자 이상', '', { icon: '✋' }); await call('set_pw', v); pw = v; history.replaceState(null, '', location.pathname + '?admin=' + encodeURIComponent(v)); toast('비밀번호를 바꿨어요', '주소도 새 비밀번호로 바뀌었어요', { icon: '🔑' }); };
     const rb = $('#resetBtn'); rb.onclick = async () => {
       resetStage++;
@@ -956,9 +1015,10 @@ async function boot() {
   if (params.get('admin') !== null) return startAdminMode(params.get('admin'));
   document.querySelectorAll('.tab').forEach(t => t.onclick = () => switchTab(t.dataset.tab));
   $('#settingsBtn').onclick = openSettings;
-  await fetchProfiles();
+  await Promise.all([fetchProfiles(), fetchState()]);
   state.me = state.profiles.find(p => p.device_id === deviceId()) || null;
   if (!state.me) { showRegister(); }
+  else if (!state.open) { showWaiting(); }
   else { $('#app').classList.remove('hidden'); await refresh(true); }
   startSync();
 }
