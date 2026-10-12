@@ -958,7 +958,7 @@ async function startScreenMode() {
   ];
   const gatePanel = () => `<div class="sc-gate"><div class="eyebrow" style="font-size:clamp(14px,2.2vh,20px)">Now registering</div>
       <h2 style="margin:10px 0 6px">QR을 찍고 등록해 주세요</h2>
-      <div class="sc-gate-sub">이름 · 키워드 · 지금 위치까지 2분이면 끝나요<br>문이 열리면 모두의 화면이 동시에 켜져요</div>
+      <div class="sc-gate-sub">이름 · 키워드 · 지금 위치까지 2분이면 끝나요</div>
       <div class="sc-gate-cnt"><b>${state.profiles.length}</b>명 등록 완료</div></div>`;
   const show = () => {
     const panel = $('#scPanel'); panel.style.animation = 'none'; void panel.offsetWidth; panel.style.animation = '';
