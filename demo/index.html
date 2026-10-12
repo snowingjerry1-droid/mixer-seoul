@@ -603,8 +603,8 @@ const regSteps = [
   { key: 'keywords', title: '나는 이런 사람', lead: '키워드 3개를 골라 주세요. 직접 써도 좋아요.', ex: '겹치는 키워드가 많을수록 말 걸 핑계가 늘어나요', max: 3 },
   { key: 'quick', title: '취향 밸런스 게임', lead: '고민 없이 톡톡. 같은 편이면 반갑고, 다른 편이면 할 말이 생겨요.', ex: '여섯 개 모두 골라야 다음으로 넘어가요' },
   { key: 'topic', title: '오늘 이런 얘기 하고 싶어요', lead: '듣고 싶은 추천이나 궁금한 것, 하나만 적어요.', ex: '내 카드에 TALK 로 보여서, 말 걸 거리가 돼요', max: 30, placeholder: '예: 맛집 추천해 줄 분', examples: TOPIC_EXAMPLES },
-  { key: 'song', title: '오늘 밤 듣고 싶은 최애곡', lead: '모인 곡으로 플레이리스트를 만들어 유튜브에서 틀어요. 그래서 곡명과 가수 이름을 정확하게 적어 주세요.', ex: '<b>곡명 - 가수</b> 형태로. 예: <b>밤편지 - 아이유</b>, <b>Supernova - aespa</b>', max: 40, placeholder: '예: 밤편지 - 아이유', optional: true },
-  { key: 'hint', title: '저는 이렇게 찾으면 돼요', lead: '오늘 입은 옷 색이나 지금 있는 자리. 건너뛰어도 돼요.', ex: '힌트가 있으면 사람들이 나를 훨씬 쉽게 찾아와요', max: 20, placeholder: '예: 검은 옷, 2층 소파', optional: true, examples: HINT_EXAMPLES },
+  { key: 'song', title: '오늘 밤 듣고 싶은 최애곡', lead: '모인 곡으로 플레이리스트를 만들어 유튜브에서 틀어요. 그래서 곡명과 가수 이름을 정확하게 적어 주세요.', ex: '<b>곡명 - 가수</b> 형태로. 예: <b>밤편지 - 아이유</b>, <b>Supernova - aespa</b>', max: 40, placeholder: '예: 밤편지 - 아이유' },
+  { key: 'hint', title: '저는 이렇게 찾으면 돼요', lead: '오늘 입은 옷 색이나 지금 있는 자리. 사람들이 이걸 보고 찾아와요.', ex: '예: 검은 옷, 2층 소파, 바 근처', max: 20, placeholder: '예: 검은 옷, 2층 소파', examples: HINT_EXAMPLES },
 ];
 let reg = { step: 0, data: { name: '', intro: '', keywords: [], quick: [], topic: '', song: '', hint: '' }, editing: false };
 function splitKeywords(arr) { return { free: (arr || []).filter(k => !QUICK_ALL.has(k)), quick: QUICK_QUESTIONS.map(x => (arr || []).find(k => x.a.includes(k)) || '') }; }
