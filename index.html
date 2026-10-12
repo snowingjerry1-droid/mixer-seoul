@@ -556,7 +556,7 @@ function startSync() {
    5. 입장 등록
    ========================================================= */
 const regSteps = [
-  { key: 'name', title: '이름을 알려 주세요', lead: '명찰에 적은 한글 실명이요. 궁합과 이름 점수 계산에 써요.', ex: '동명이인은 자동으로 <b>김민지②</b>처럼 구분돼요', max: 20, placeholder: '예: 김민지' },
+  { key: 'name', title: '이름을 알려 주세요', lead: '한글 실명으로요. 궁합과 이름 점수 계산에 써요.', ex: '동명이인은 자동으로 <b>김민지②</b>처럼 구분돼요', max: 20, placeholder: '예: 김민지' },
   { key: 'intro', title: '요즘 나는 어떤 사람?', lead: '어렵게 생각하지 마세요. 요즘 푹 빠진 것 하나면 충분해요.', ex: '아래 예시를 눌러 그대로 쓰거나 살짝 고쳐도 돼요', max: 30, placeholder: '예: 요즘 빵에 푹 빠진 사람', examples: INTRO_EXAMPLES },
   { key: 'keywords', title: '나는 이런 사람', lead: '키워드 3개를 골라 주세요. 직접 써도 좋아요.', ex: '겹치는 키워드가 많을수록 말 걸 핑계가 늘어나요', max: 3 },
   { key: 'quick', title: '취향 밸런스 게임', lead: '고민 없이 톡톡. 같은 편이면 반갑고, 다른 편이면 할 말이 생겨요.', ex: '여섯 개 모두 골라야 다음으로 넘어가요' },
@@ -719,7 +719,7 @@ function personCard(p, opts = {}) {
     ${kwChips(p, hl)}
     ${p.topic ? `<div class="hint-line"><span class="k">Talk</span><span class="v">${esc(p.topic)}</span></div>` : ''}
     ${p.song ? `<div class="hint-line"><span class="k">Song</span><span class="v">${esc(p.song)}</span></div>` : ''}
-    <div class="hint-line"><span class="k">Find</span><span class="v">${p.hint ? esc(p.hint) : '<span class="dim">힌트 없음 · 명찰의 키워드를 찾아보세요</span>'}</span></div>
+    <div class="hint-line"><span class="k">Find</span><span class="v">${p.hint ? esc(p.hint) : '<span class="dim">힌트 없음</span>'}</span></div>
     <div style="margin-top:12px"><button class="btn block ${opts.btnClass || ''}" data-go="${p.id}" data-kind="${opts.go || 'plain'}" data-extra="${esc(opts.extra || '')}">${opts.btnText || '정보 더보기'}</button></div>
   </div>`;
 }
@@ -805,7 +805,7 @@ async function runCompatAnimation(target) {
   if (!state.busy) return;
   $('#compatResult').innerHTML = `<div class="eyebrow dim" style="text-align:center;margin-top:10px">두 방향 평균</div>
     <div class="result-big">${r.pct}%</div><div class="result-phrase">${esc(compatPhrase(r.pct))}</div>
-    <div class="hint-line" style="margin-top:16px"><span class="k">Find</span><span class="v">${target.hint ? esc(target.hint) : '<span class="dim">힌트 없음 · 명찰의 키워드를 찾아보세요</span>'}</span></div>
+    <div class="hint-line" style="margin-top:16px"><span class="k">Find</span><span class="v">${target.hint ? esc(target.hint) : '<span class="dim">힌트 없음</span>'}</span></div>
     <div style="margin-top:12px"><button class="btn block" data-go="${target.id}" data-kind="compat" data-extra="${r.pct}">이 사람 정보 더보기</button></div>`;
   $('#compatResult').scrollIntoView({ block: 'end', behavior: 'smooth' });
   if (r.pct >= 80) sparks(30);
@@ -866,7 +866,7 @@ function openGo(id, kind = 'plain', extra = '') {
         <div class="pl"><div class="k">오늘 하고 싶은 얘기</div><div class="v">${esc(p.topic || '—')}</div></div>
         ${p.song ? `<div class="pl"><div class="k">오늘 밤 최애곡</div><div class="v">🎵 ${esc(p.song)}</div></div>` : ''}
       </div>
-      <div class="hint">${p.hint ? `<div class="k">찾는 힌트</div><div class="v">${esc(p.hint)}</div>` : `<div class="k">힌트 없음</div><div class="v" style="font-size:18px;color:var(--fg-2)">명찰에서 <b style="color:var(--brass-2)">#${esc(p.keywords?.[0] || '?')}</b> 를 찾아보세요</div>`}</div>
+      <div class="hint">${p.hint ? `<div class="k">찾는 힌트</div><div class="v">${esc(p.hint)}</div>` : `<div class="k">찾는 힌트</div><div class="v" style="font-size:18px;color:var(--fg-2)">아직 힌트가 없어요</div>`}</div>
       <div class="eyebrow dim" style="margin:14px 0 8px;text-align:left">키워드${ov.length ? ` · 나와 ${ov.length}개 겹침` : ''}</div>
       ${kwChips(p, ov)}
       <div class="eyebrow dim" style="margin:18px 0 8px;text-align:left">이렇게 말 걸어 보세요</div>
