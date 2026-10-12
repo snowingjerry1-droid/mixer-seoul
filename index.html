@@ -58,8 +58,8 @@ main#view{flex:1;padding:8px 18px calc(92px + env(safe-area-inset-bottom,0px));m
 /* 공통 요소 */
 .section{margin-top:26px}
 .section-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px}
-.section-title h2{font-size:21px}
-.section-title .sub{font-size:12px;letter-spacing:.08em;color:var(--fg-2)}
+.section-title h2{font-size:21px;flex:1;min-width:0}
+.section-title .sub{font-size:12px;letter-spacing:.08em;color:var(--fg-2);white-space:nowrap;flex:none}
 .card{background:linear-gradient(180deg,var(--card-2),var(--card));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:16px;margin-bottom:12px;animation:pop .35s ease both}
 .card.tight{padding:12px 14px}
 .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -728,9 +728,9 @@ function renderCompat() {
     </div>
     <div id="compatStage">${sel ? `<div class="card"><div class="vs">${esc(state.me.display)} <span class="x">✕</span> ${esc(sel.display)}</div><div style="margin-top:12px"><button class="btn block marble" id="compatRun">궁합 계산 시작</button></div></div>` : ''}</div>
   </div>
-  <div class="section"><div class="section-title"><h2>나의 콤비 랭킹</h2><span class="sub">${esc(state.me.display)} 기준 · 자동 집계</span></div>
+  <div class="section"><div class="section-title"><h2>나의 콤비 랭킹</h2><span class="sub">${esc(state.me.display)} 기준 TOP 5</span></div>
     <div class="rank-list">${mine.length ? mine.slice(0, 5).map((c, i) => `<div class="item"><span class="no">${i + 1}</span>${avatar(c.p, 34)}<div class="who"><div class="name">${esc(c.p.display)}</div><div class="dim">${esc(compatPhrase(c.pct))}${c.p.hint ? ` · 📍 ${esc(c.p.hint)}` : ''}</div></div><span class="pct">${c.pct}%</span><button class="btn sm ghost" data-go="${c.p.id}" data-kind="compat" data-extra="${c.pct}">더보기</button></div>`).join('') : '<div class="empty">다른 참석자가 들어오면 보여요</div>'}</div></div>
-  <div class="section"><div class="section-title"><h2>오늘의 환상의 콤비 TOP 5</h2><span class="sub">참석자 전원 · 자동 집계</span></div>
+  <div class="section"><div class="section-title"><h2>환상의 콤비 TOP 5</h2><span class="sub">전원 자동 집계</span></div>
     <div class="rank-list">${top.length ? top.map((c, i) => `<div class="item ${c.a.id === state.me.id || c.b.id === state.me.id ? 'me' : ''}"><span class="no">${i + 1}</span><div class="who"><div class="name">${esc(c.a.display)} ✕ ${esc(c.b.display)}</div><div class="dim">${esc(compatPhrase(c.pct))}</div></div><span class="pct">${c.pct}%</span></div>`).join('') : '<div class="empty">두 명 이상 등록되면 보여요</div>'}</div></div>`;
 }
 async function runCompatAnimation(target) {
