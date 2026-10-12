@@ -752,6 +752,7 @@ function runSlot(el, score, done) {
     ds.forEach((d, i) => { if (i >= stopped) d.textContent = Math.floor(Math.random() * 10); });
     t += 1;
     if (t === 14 && stopped === 0) { stopped = 1; ds[0].textContent = digits[0]; ds[0].classList.add('stop'); }
+    if (!el.isConnected) return;
     if (t >= 26) { ds.forEach((d, i) => { d.textContent = digits[i]; d.classList.add('stop'); }); done && done(); return; }
     setTimeout(tick, 60 + t * 4);
   }; tick();
@@ -816,7 +817,7 @@ function bindView() {
   const cs = $('#compatSearch'); if (cs) cs.addEventListener('input', () => { state.compatQ = cs.value.trim(); const pp = $('#peoplePick'); pp.innerHTML = others().filter(p => !state.compatQ || p.display.includes(state.compatQ)).map(p => `<span class="chip ${state.compatWith === p.id ? 'sel' : ''}" data-pick="${p.id}">${esc(p.display)}</span>`).join('') || '<span class="muted">없어요</span>'; bindPicks(); });
   bindPicks();
   const cr = $('#compatRun'); if (cr) cr.onclick = () => runCompatAnimation(byId(state.compatWith));
-  const ms = $('#mySlot'); if (ms) { const ns = nameScore(state.me.name); const go = () => { $('#myReasons').innerHTML = ''; runSlot(ms, ns.score, () => $('#myReasons').innerHTML = reasonsHTML(ns)); }; go(); $('#slotAgain').onclick = go; }
+  const ms = $('#mySlot'); if (ms) { const ns = nameScore(state.me.name); const go = () => { const r = $('#myReasons'); if (r) r.innerHTML = ''; runSlot(ms, ns.score, () => { const r2 = $('#myReasons'); if (r2) r2.innerHTML = reasonsHTML(ns); }); }; go(); $('#slotAgain').onclick = go; }
 }
 setInterval(() => { const w = $('#spotWrap'); if (w && state.tab === 'home' && state.me) { const t = $('#spotTxt'); if (t) t.style.opacity = 0; setTimeout(() => { w.innerHTML = spotlightHTML(spotlightPick()); bindView(); }, 400); } }, SPOTLIGHT_MS);
 
