@@ -194,7 +194,11 @@ main#view{flex:1;padding:8px 18px calc(92px + env(safe-area-inset-bottom,0px));m
 .go-card{text-align:center;padding:10px 0 4px}
 .go-card .avatar{margin:0 auto 10px;width:64px;height:64px;font-size:28px}
 .go-card .nm{font-family:var(--font-display);font-size:30px}
-.go-card .hint{margin:16px 0 6px;padding:16px;border-radius:14px;background:var(--bg);border:1px solid var(--brass);position:relative}
+.profile-lines{display:flex;flex-direction:column;gap:8px;margin-top:14px;text-align:left}
+.profile-lines .pl{background:var(--card);border:1px solid var(--line-2);border-radius:12px;padding:10px 14px}
+.profile-lines .k{font-size:11px;letter-spacing:.18em;color:var(--brass);text-transform:uppercase}
+.profile-lines .v{font-family:var(--font-display);font-size:19px;margin-top:2px;line-height:1.35}
+.go-card .hint{margin:12px 0 6px;padding:16px;border-radius:14px;background:var(--bg);border:1px solid var(--brass);position:relative}
 .go-card .hint::before{content:"";position:absolute;inset:4px;border:1px solid var(--line-2);border-radius:10px;pointer-events:none}
 .go-card .hint .k{font-size:10px;letter-spacing:.24em;color:var(--brass);text-transform:uppercase}
 .go-card .hint .v{font-family:var(--font-display);font-size:26px;margin-top:4px}
@@ -322,7 +326,7 @@ const SCORE_TITLES = [
   { min: 0,  text: '숨은 매력이 있는 이름' },
 ];
 
-// "말 걸러 가기" 카드의 첫마디 제안 ({kw} {topic} {pct} {rank} 치환)
+// "정보 더보기" 카드의 첫마디 제안 ({kw} {topic} {pct} {rank} 치환)
 const OPENERS = {
   keyword: '#{kw} 보고 왔어요! 저도 {kw} 해요',
   topic:   '‘{topic}’ 찾으신다면서요? 저예요',
@@ -655,7 +659,7 @@ function kwChips(p, highlight = []) {
   const H = new Set(highlight.map(norm));
   return `<div class="chips">${(p.keywords || []).map(k => `<span class="chip ${H.has(norm(k)) ? 'hit' : ''}">#${esc(k)}</span>`).join('')}</div>`;
 }
-// 사람 카드. opts.go = 말 걸러 가기 버튼의 첫마디 종류 ('keyword'|'topic'|'compat'|'score'|'plain')
+// 사람 카드. opts.go = 정보 더보기 카드의 첫마디 종류 ('keyword'|'topic'|'compat'|'score'|'plain')
 function personCard(p, opts = {}) {
   const hl = opts.highlight || [];
   return `<div class="card">
@@ -666,7 +670,7 @@ function personCard(p, opts = {}) {
     ${kwChips(p, hl)}
     ${p.topic ? `<div class="hint-line"><span class="k">Talk</span><span class="v">${esc(p.topic)}</span></div>` : ''}
     <div class="hint-line"><span class="k">Find</span><span class="v">${p.hint ? esc(p.hint) : '<span class="dim">힌트 없음 · 명찰의 키워드를 찾아보세요</span>'}</span></div>
-    <div style="margin-top:12px"><button class="btn block ${opts.btnClass || ''}" data-go="${p.id}" data-kind="${opts.go || 'plain'}" data-extra="${esc(opts.extra || '')}">${opts.btnText || '말 걸러 가기 →'}</button></div>
+    <div style="margin-top:12px"><button class="btn block ${opts.btnClass || ''}" data-go="${p.id}" data-kind="${opts.go || 'plain'}" data-extra="${esc(opts.extra || '')}">${opts.btnText || '정보 더보기'}</button></div>
   </div>`;
 }
 function spotlightPick() {
@@ -674,7 +678,7 @@ function spotlightPick() {
 }
 function spotlightHTML(p) {
   return `<div class="spot"><div class="eyebrow">Tonight's spotlight</div><div class="txt" id="spotTxt">“${esc(p.intro || '소개를 아직 안 적었어요')}”</div>
-    <div class="spread"><span class="who">${esc(p.display)} · ${(p.keywords || []).map(k => '#' + esc(k)).join(' ')}</span>${p.id !== state.me.id ? `<button class="btn sm ghost" data-go="${p.id}" data-kind="plain">찾아가기</button>` : ''}</div></div>`;
+    <div class="spread"><span class="who">${esc(p.display)} · ${(p.keywords || []).map(k => '#' + esc(k)).join(' ')}</span>${p.id !== state.me.id ? `<button class="btn sm ghost" data-go="${p.id}" data-kind="plain">더보기</button>` : ''}</div></div>`;
 }
 function renderHome() {
   const me = state.me;
@@ -700,7 +704,7 @@ function renderWall() {
   return `<div class="section" style="margin-top:8px"><div class="section-title"><h2>키워드 벽</h2><span class="sub">tap to find</span></div>
     <div class="cloud">${chips.join('') || '<span class="muted">아직 키워드가 없어요</span>'}</div></div>
     ${sel ? `<div class="section"><div class="section-title"><h2>#${esc(sel)} <span style="font-size:14px;color:var(--fg-3);font-family:var(--font-body);font-weight:500">${people.length}명</span></h2><button class="btn sm ghost" id="wallClear">닫기</button></div>
-      ${people.map(p => p.id === state.me.id ? `<div class="card tight"><div class="row" style="flex-wrap:nowrap">${avatar(p)}<div style="min-width:0"><div class="name" style="font-size:17px">${esc(p.display)} <span class="dim">나</span></div><div class="muted">${esc(p.intro)}</div></div></div></div>` : personCard(p, { highlight: [sel], btnText: '이런 사람이라면서요? 찾아가기 →', go: 'keyword', extra: sel })).join('')}</div>` : ''}`;
+      ${people.map(p => p.id === state.me.id ? `<div class="card tight"><div class="row" style="flex-wrap:nowrap">${avatar(p)}<div style="min-width:0"><div class="name" style="font-size:17px">${esc(p.display)} <span class="dim">나</span></div><div class="muted">${esc(p.intro)}</div></div></div></div>` : personCard(p, { highlight: [sel], btnText: '정보 더보기', go: 'keyword', extra: sel })).join('')}</div>` : ''}`;
 }
 // 전체 쌍 궁합 랭킹
 function allPairs() {
@@ -722,7 +726,7 @@ function renderCompat() {
     <div id="compatStage">${sel ? `<div class="card"><div class="vs">${esc(state.me.display)} <span class="x">✕</span> ${esc(sel.display)}</div><div style="margin-top:12px"><button class="btn block marble" id="compatRun">궁합 계산 시작</button></div></div>` : ''}</div>
   </div>
   <div class="section"><div class="section-title"><h2>나의 콤비 랭킹</h2><span class="sub">${esc(state.me.display)} 기준 · 자동 집계</span></div>
-    <div class="rank-list">${mine.length ? mine.slice(0, 10).map((c, i) => `<div class="item"><span class="no">${i + 1}</span>${avatar(c.p, 34)}<div class="who"><div class="name">${esc(c.p.display)}</div><div class="dim">${esc(compatPhrase(c.pct))}${c.p.hint ? ` · 📍 ${esc(c.p.hint)}` : ''}</div></div><span class="pct">${c.pct}%</span><button class="btn sm ghost" data-go="${c.p.id}" data-kind="compat" data-extra="${c.pct}">찾기</button></div>`).join('') : '<div class="empty">다른 참석자가 들어오면 보여요</div>'}</div></div>
+    <div class="rank-list">${mine.length ? mine.slice(0, 10).map((c, i) => `<div class="item"><span class="no">${i + 1}</span>${avatar(c.p, 34)}<div class="who"><div class="name">${esc(c.p.display)}</div><div class="dim">${esc(compatPhrase(c.pct))}${c.p.hint ? ` · 📍 ${esc(c.p.hint)}` : ''}</div></div><span class="pct">${c.pct}%</span><button class="btn sm ghost" data-go="${c.p.id}" data-kind="compat" data-extra="${c.pct}">더보기</button></div>`).join('') : '<div class="empty">다른 참석자가 들어오면 보여요</div>'}</div></div>
   <div class="section"><div class="section-title"><h2>오늘의 환상의 콤비 TOP 5</h2><span class="sub">참석자 전원 · 자동 집계</span></div>
     <div class="rank-list">${top.length ? top.map((c, i) => `<div class="item ${c.a.id === state.me.id || c.b.id === state.me.id ? 'me' : ''}"><span class="no">${i + 1}</span><div class="who"><div class="name">${esc(c.a.display)} ✕ ${esc(c.b.display)}</div><div class="dim">${esc(compatPhrase(c.pct))}</div></div><span class="pct">${c.pct}%</span></div>`).join('') : '<div class="empty">두 명 이상 등록되면 보여요</div>'}</div></div>`;
 }
@@ -750,7 +754,7 @@ async function runCompatAnimation(target) {
   $('#compatResult').innerHTML = `<div class="eyebrow dim" style="text-align:center;margin-top:10px">두 방향 평균</div>
     <div class="result-big">${r.pct}%</div><div class="result-phrase">${esc(compatPhrase(r.pct))}</div>
     <div class="hint-line" style="margin-top:16px"><span class="k">Find</span><span class="v">${target.hint ? esc(target.hint) : '<span class="dim">힌트 없음 · 명찰의 키워드를 찾아보세요</span>'}</span></div>
-    <div style="margin-top:12px"><button class="btn block" data-go="${target.id}" data-kind="compat" data-extra="${r.pct}">궁합 확인했어요, 인사하러 가기 →</button></div>`;
+    <div style="margin-top:12px"><button class="btn block" data-go="${target.id}" data-kind="compat" data-extra="${r.pct}">이 사람 정보 더보기</button></div>`;
   $('#compatResult').scrollIntoView({ block: 'end', behavior: 'smooth' });
   if (r.pct >= 80) sparks(30);
   state.busy = false;
@@ -783,9 +787,9 @@ function renderScore() {
       <div class="muted" style="margin-top:12px">전체 ${ranked.length}명 중 ${myRank}등</div>
       <button class="btn sm ghost" id="slotAgain" style="margin-top:10px">다시 돌리기</button></div></div>
   <div class="section"><div class="section-title"><h2>이름 점수 전체 순위</h2><span class="sub">${ranked.length}명 · 운으로 정해지는 순위</span></div>
-    <div class="rank-list">${ranked.map((x, i) => `<div class="item ${x.p.id === state.me.id ? 'me' : ''}"><span class="no">${i + 1}</span>${avatar(x.p, 34)}<div class="who"><div class="name">${esc(x.p.display)}${x.p.id === state.me.id ? ' <span class="dim">나</span>' : ''}</div><div class="dim">${esc(x.s.title)}</div></div><span class="pct" style="margin-left:0">${x.s.score}</span>${x.p.id !== state.me.id ? `<button class="btn sm ghost" data-go="${x.p.id}" data-kind="score" data-extra="${i + 1}">찾기</button>` : ''}</div>`).join('')}</div></div>`;
+    <div class="rank-list">${ranked.map((x, i) => `<div class="item ${x.p.id === state.me.id ? 'me' : ''}"><span class="no">${i + 1}</span>${avatar(x.p, 34)}<div class="who"><div class="name">${esc(x.p.display)}${x.p.id === state.me.id ? ' <span class="dim">나</span>' : ''}</div><div class="dim">${esc(x.s.title)}</div></div><span class="pct" style="margin-left:0">${x.s.score}</span>${x.p.id !== state.me.id ? `<button class="btn sm ghost" data-go="${x.p.id}" data-kind="score" data-extra="${i + 1}">더보기</button>` : ''}</div>`).join('')}</div></div>`;
 }
-// 말 걸러 가기 카드: 상대 힌트 + 첫마디 제안
+// 정보 더보기 카드: 상대가 쓴 문장 + 힌트 + 첫마디 제안
 function openGo(id, kind = 'plain', extra = '') {
   const p = byId(id); if (!p) return;
   const me = state.me;
@@ -803,8 +807,13 @@ function openGo(id, kind = 'plain', extra = '') {
   // 요청한 종류의 첫마디를 맨 위로
   const order = { keyword: OPENERS.keyword.slice(0, 2), topic: '‘', compat: '우리', score: '이름 점수' };
   openers.sort((a, b) => (b.startsWith(order[kind] || '\u0001') ? 1 : 0) - (a.startsWith(order[kind] || '\u0001') ? 1 : 0));
-  openModal(`<button class="icon-btn" id="goClose" aria-label="닫기" style="position:absolute;top:14px;right:16px">✕</button><div class="go-card">${avatar(p, 64)}<div class="eyebrow">Go find</div><div class="nm">${esc(p.display)}</div><div class="muted">${esc(p.intro)}</div>
+  openModal(`<button class="icon-btn" id="goClose" aria-label="닫기" style="position:absolute;top:14px;right:16px">✕</button><div class="go-card">${avatar(p, 64)}<div class="eyebrow">Profile</div><div class="nm">${esc(p.display)}</div>
+      <div class="profile-lines">
+        <div class="pl"><div class="k">요즘 나는</div><div class="v">${esc(p.intro || '—')}</div></div>
+        <div class="pl"><div class="k">오늘 하고 싶은 얘기</div><div class="v">${esc(p.topic || '—')}</div></div>
+      </div>
       <div class="hint">${p.hint ? `<div class="k">찾는 힌트</div><div class="v">${esc(p.hint)}</div>` : `<div class="k">힌트 없음</div><div class="v" style="font-size:18px;color:var(--fg-2)">명찰에서 <b style="color:var(--brass-2)">#${esc(p.keywords?.[0] || '?')}</b> 를 찾아보세요</div>`}</div>
+      <div class="eyebrow dim" style="margin:14px 0 8px;text-align:left">키워드${ov.length ? ` · 나와 ${ov.length}개 겹침` : ''}</div>
       ${kwChips(p, ov)}
       <div class="eyebrow dim" style="margin:18px 0 8px;text-align:left">이렇게 말 걸어 보세요</div>
       <div class="openers">${openers.slice(0, 3).map(o => `<div class="o">${esc(o)}</div>`).join('')}</div>
