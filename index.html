@@ -836,8 +836,7 @@ function renderScore() {
   return `<div class="section" style="margin-top:8px"><div class="section-title"><h2>이름 점수</h2><span class="sub">just for fun</span></div>
     <div class="card" style="text-align:center"><div class="eyebrow dim">${esc(state.me.display)}의 이름 점수</div>
       <div class="slot" id="mySlot"></div><div id="myReasons"></div>
-      <div class="muted" style="margin-top:12px">전체 ${ranked.length}명 중 ${myRank}등</div>
-      <button class="btn sm ghost" id="slotAgain" style="margin-top:10px">다시 돌리기</button></div></div>
+      <div class="muted" style="margin-top:12px">전체 ${ranked.length}명 중 ${myRank}등</div></div></div>
   <div class="section"><div class="section-title"><h2>이름 점수 전체 순위</h2><span class="sub">${ranked.length}명 · 운으로 정해지는 순위</span></div>
     <div class="rank-list">${ranked.map((x, i) => `<div class="item ${x.p.id === state.me.id ? 'me' : ''}"><span class="no">${i + 1}</span>${avatar(x.p, 34)}<div class="who"><div class="name">${esc(x.p.display)}${x.p.id === state.me.id ? ' <span class="dim">나</span>' : ''}</div><div class="dim">${esc(x.s.title)}</div></div><span class="pct" style="margin-left:0">${x.s.score}</span>${x.p.id !== state.me.id ? `<button class="btn sm ghost" data-go="${x.p.id}" data-kind="score" data-extra="${i + 1}">더보기</button>` : ''}</div>`).join('')}</div></div>`;
 }
@@ -921,7 +920,7 @@ function bindView() {
   const cs = $('#compatSearch'); if (cs) cs.addEventListener('input', () => { state.compatQ = cs.value.trim(); const pp = $('#peoplePick'); pp.innerHTML = others().filter(p => !state.compatQ || p.display.includes(state.compatQ)).map(p => `<span class="chip ${state.compatWith === p.id ? 'sel' : ''}" data-pick="${p.id}">${esc(p.display)}</span>`).join('') || '<span class="muted">없어요</span>'; bindPicks(); });
   bindPicks();
   const cr = $('#compatRun'); if (cr) cr.onclick = () => runCompatAnimation(byId(state.compatWith));
-  const ms = $('#mySlot'); if (ms) { const ns = nameScore(state.me.name); const go = () => { const r = $('#myReasons'); if (r) r.innerHTML = ''; runSlot(ms, ns.score, () => { const r2 = $('#myReasons'); if (r2) r2.innerHTML = reasonsHTML(ns); }); }; go(); $('#slotAgain').onclick = go; }
+  const ms = $('#mySlot'); if (ms) { const ns = nameScore(state.me.name); runSlot(ms, ns.score, () => { const r2 = $('#myReasons'); if (r2) r2.innerHTML = reasonsHTML(ns); }); }
 }
 setInterval(() => { const w = $('#spotWrap'); if (w && state.tab === 'home' && state.me) { const t = $('#spotTxt'); if (t) t.style.opacity = 0; setTimeout(() => { w.innerHTML = spotlightHTML(spotlightPick()); bindView(); }, 400); } }, SPOTLIGHT_MS);
 
