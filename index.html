@@ -242,7 +242,7 @@ body.screen{overflow:hidden}
 .sc-gate-sub{font-size:clamp(18px,3vh,30px);color:var(--fg-2);line-height:1.5;margin-top:10px}
 .sc-gate-cnt{margin-top:clamp(16px,4vh,40px);font-size:clamp(22px,3.6vh,36px);color:var(--fg)}
 .sc-gate-cnt b{font-family:var(--font-display);font-size:clamp(48px,11vh,110px);color:var(--brass-2);text-shadow:0 0 30px var(--glow);margin-right:8px}
-.sc-spot{text-align:center;position:relative}
+.sc-spot{text-align:center;position:relative;transition:opacity .25s}
 .sc-spot .txt{font-family:var(--font-display);font-size:clamp(36px,8.5vh,80px);line-height:1.3;color:var(--fg)}
 .sc-spot .who{font-size:clamp(18px,3.4vh,32px);color:var(--fg-2);margin-top:clamp(12px,2.8vh,26px)}
 .sc-spot .kw{margin-top:18px;display:flex;justify-content:center;gap:12px;font-size:clamp(16px,2.6vh,24px);flex-wrap:wrap}
@@ -287,6 +287,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const POLL_MS = 4000;          // 새로고침 간격
 const SPOTLIGHT_MS = 30000;    // 스포트라이트 교체 간격
 const SCREEN_ROTATE_MS = 10000;// 큰 화면 모드 순환 간격
+const SCREEN_SPOT_MS = 3000;   // 큰 화면 스포트라이트에서 사람이 바뀌는 간격
 
 // 등록 질문 예시 칩 (탭하면 입력칸에 채워지고, 고쳐 쓸 수 있음)
 const INTRO_EXAMPLES = ['요즘 빵에 푹 빠진 사람','주말엔 무조건 집','커피 없으면 못 사는 사람','과제 미루고 넷플릭스 보는 중','헬스 끊고 3일 간 사람','자취 요리 도전 중','카페 투어가 취미','밤에 더 살아나는 야행성','즉흥으로 떠나는 거 좋아해요','덕질이 삶의 원동력','새로운 사람 만나는 거 좋아해요','조용히 듣는 게 편한 사람','사진 찍는 게 제일 재밌어요','요즘 러닝 시작했어요','플레이리스트 만드는 게 취미','방탈출 성공률 높은 편'];
@@ -952,20 +953,25 @@ async function startScreenMode() {
       const top = allPairs().slice(0, 5);
       return `<h2>오늘의 환상의 콤비 TOP 5</h2><div class="sc-rank" style="grid-template-columns:1fr">${top.map((c, i) => `<div class="it"><span class="no">${i + 1}</span><div><div>${esc(c.a.display)} ✕ ${esc(c.b.display)}</div><div class="sub">${esc(compatPhrase(c.pct))}</div></div><span class="sc">${c.pct}%</span></div>`).join('') || '<div style="font-size:36px;color:var(--fg-2)">두 명 이상 등록되면 보여요</div>'}</div>`;
     },
-    () => {
-      const pool = state.profiles.filter(p => p.intro); if (!pool.length) return `<h2>오늘의 스포트라이트</h2><div class="sc-spot"><div class="txt" style="color:var(--fg-2)">등록하면 여기에 소개가 떠요</div></div>`;
-      const p = pickRandom(pool);
-      return `<h2>오늘의 스포트라이트</h2><div class="sc-spot"><div class="txt">“${esc(p.intro)}”</div><div class="who">${esc(p.display)}${p.topic ? ` · ${esc(p.topic)}` : ''}${p.hint ? ` · 📍 ${esc(p.hint)}` : ''}</div><div class="kw">${(p.keywords || []).map(k => `<span>#${esc(k)}</span>`).join('')}</div></div>`;
-    },
+    () => `<h2>오늘 밤, 이런 사람들이 와 있어요</h2><div class="sc-spot" id="scSpotBody">${spotInner()}</div>`,
   ];
+  let lastSpot = null;
+  const spotInner = () => {
+    const pool = state.profiles.filter(p => p.intro && p.id !== lastSpot); if (!pool.length) return `<div class="txt" style="color:var(--fg-2)">등록하면 여기에 소개가 떠요</div>`;
+    const p = pickRandom(pool); lastSpot = p.id;
+    return `<div class="txt">“${esc(p.intro)}”</div><div class="who">${esc(p.display)}${p.topic ? ` · ${esc(p.topic)}` : ''}${p.hint ? ` · 📍 ${esc(p.hint)}` : ''}</div><div class="kw">${(p.keywords || []).filter(k => !QUICK_ALL.has(k)).map(k => `<span>#${esc(k)}</span>`).join('')}</div>`;
+  };
+  let spotTimer = null;
   const gatePanel = () => `<div class="sc-gate"><div class="eyebrow" style="font-size:clamp(14px,2.2vh,20px)">Now registering</div>
       <h2 style="margin:10px 0 6px">QR을 찍고 등록해 주세요</h2>
       <div class="sc-gate-sub">이름 · 키워드 · 지금 위치까지 2분이면 끝나요</div>
       <div class="sc-gate-cnt"><b>${state.profiles.length}</b>명 등록 완료</div></div>`;
   const show = () => {
     const panel = $('#scPanel'); panel.style.animation = 'none'; void panel.offsetWidth; panel.style.animation = '';
+    clearInterval(spotTimer);
     if (!state.open) { panel.innerHTML = gatePanel(); const prog = $('#scProg'); prog.style.transition = 'none'; prog.style.width = '0'; return; }
-    panel.innerHTML = panels[idx % panels.length](); idx++;
+    const which = idx % panels.length; panel.innerHTML = panels[which](); idx++;
+    if (which === panels.length - 1) spotTimer = setInterval(() => { const el = $('#scSpotBody'); if (!el) return; el.style.opacity = 0; setTimeout(() => { el.innerHTML = spotInner(); el.style.opacity = 1; }, 250); }, SCREEN_SPOT_MS);
     const prog = $('#scProg'); prog.style.transition = 'none'; prog.style.width = '0'; void prog.offsetWidth; prog.style.transition = `width ${SCREEN_ROTATE_MS}ms linear`; prog.style.width = '100%';
   };
   await Promise.all([fetchProfiles(), fetchState()]); $('#scCount').textContent = state.profiles.length; show();
