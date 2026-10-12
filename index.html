@@ -117,6 +117,12 @@ main#view{flex:1;padding:8px 18px calc(92px + env(safe-area-inset-bottom,0px));m
 .reg-card .lead{color:var(--fg-2);font-size:15px;margin-bottom:18px}
 .reg-card .ex{font-size:14px;color:var(--fg-2);margin-top:10px}
 .reg-card .ex b{color:var(--brass-2);font-weight:600}
+.quick-row{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--line)}
+.quick-row:last-child{border-bottom:0}
+.quick-q{font-weight:700;font-size:15px}
+.quick-a{display:flex;gap:8px}
+.quick-btn{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line-2);background:var(--bg-2);color:var(--fg);font-weight:700;font-size:16px;transition:all .15s}
+.quick-btn.on{background:var(--brass);border-color:var(--brass);color:#FFF4E8;box-shadow:0 0 14px var(--glow)}
 .reg-actions{display:flex;gap:10px;margin-top:20px}
 .reg-actions .btn{flex:1}
 .big-kw{font-family:var(--font-display);font-size:40px;color:#FFF4E8;background:linear-gradient(135deg,#F79350,#ED752F);display:inline-block;padding:10px 28px;border-radius:999px;animation:bounceIn .6s cubic-bezier(.2,.9,.3,1.3) both;box-shadow:0 0 40px var(--glow)}
@@ -273,6 +279,17 @@ const SCREEN_ROTATE_MS = 15000;// 큰 화면 모드 순환 간격
 const INTRO_EXAMPLES = ['요즘 빵에 푹 빠진 사람','주말엔 무조건 집','커피 없으면 못 사는 사람','과제 미루고 넷플릭스 보는 중','헬스 끊고 3일 간 사람','자취 요리 도전 중','카페 투어가 취미','밤에 더 살아나는 야행성','즉흥으로 떠나는 거 좋아해요','덕질이 삶의 원동력','새로운 사람 만나는 거 좋아해요','조용히 듣는 게 편한 사람','사진 찍는 게 제일 재밌어요','요즘 러닝 시작했어요','플레이리스트 만드는 게 취미','방탈출 성공률 높은 편'];
 const TOPIC_EXAMPLES = ['맛집 추천해 줄 분','요즘 뭐가 재밌는지 알려 줄 분','넷플릭스 뭐 볼지 알려 줄 분','여행지 추천해 줄 분','운동 같이 시작할 분','플레이리스트 공유해 줄 분','카페 추천해 줄 분','취준·진로 얘기 나눌 분','자취 꿀팁 알려 줄 분','같은 전공 얘기 할 분','덕질 얘기 나눌 분','요즘 읽을 책 추천해 줄 분','주말에 뭐 하는지 궁금해요','MBTI 얘기 해 볼 분'];
 const HINT_EXAMPLES = ['검은 옷','흰 셔츠','안경','모자','후드티','청자켓','1층 테이블','2층 소파','바 근처','입구 쪽','창가','계단 옆'];
+
+// 양자택일 질문: 답이 그대로 키워드가 되어 '나랑 통하는 사람' 겹침에 쓰임
+const QUICK_QUESTIONS = [
+  { q: '주말엔 주로?', a: ['집콕', '나들이'] },
+  { q: '나는 어느 쪽?', a: ['아침형', '야행성'] },
+  { q: '여행 스타일은?', a: ['계획여행', '즉흥여행'] },
+  { q: '처음 만난 자리에서?', a: ['E형', 'I형'] },
+  { q: '한 잔 한다면?', a: ['술', '커피'] },
+  { q: '동물은?', a: ['고양이파', '강아지파'] },
+];
+const QUICK_ALL = new Set(QUICK_QUESTIONS.flatMap(x => x.a));
 
 // 추천 키워드 (20대·대학생 기준, 순서대로 칩으로 표시)
 const SUGGEST_KEYWORDS = [
@@ -507,13 +524,16 @@ const regSteps = [
   { key: 'name', title: '이름을 알려 주세요', lead: '명찰에 적은 한글 실명이요. 궁합과 이름 점수 계산에 써요.', ex: '동명이인은 자동으로 <b>김민지②</b>처럼 구분돼요', max: 20, placeholder: '예: 김민지' },
   { key: 'intro', title: '요즘 나는 어떤 사람?', lead: '어렵게 생각하지 마세요. 요즘 푹 빠진 것 하나면 충분해요.', ex: '아래 예시를 눌러 그대로 쓰거나 살짝 고쳐도 돼요', max: 30, placeholder: '예: 요즘 빵에 푹 빠진 사람', examples: INTRO_EXAMPLES },
   { key: 'keywords', title: '나는 이런 사람', lead: '키워드 3개를 골라 주세요. 직접 써도 좋아요.', ex: '겹치는 키워드가 많을수록 말 걸 핑계가 늘어나요', max: 3 },
-  { key: 'topic', title: '오늘 이런 얘기 하고 싶어요', lead: '듣고 싶은 추천이나 궁금한 것, 하나만 적어요.', ex: '이 문장이 다른 사람 화면에 “혹시 당신?” 으로 떠요', max: 30, placeholder: '예: 맛집 추천해 줄 분', examples: TOPIC_EXAMPLES },
+  { key: 'quick', title: '빠르게 골라 주세요', lead: '고민 없이 톡톡. 답이 키워드가 되어 통하는 사람을 찾아 줘요.', ex: '여섯 개 모두 골라야 다음으로 넘어가요' },
+  { key: 'topic', title: '오늘 이런 얘기 하고 싶어요', lead: '듣고 싶은 추천이나 궁금한 것, 하나만 적어요.', ex: '내 카드에 TALK 로 보여서, 말 걸 거리가 돼요', max: 30, placeholder: '예: 맛집 추천해 줄 분', examples: TOPIC_EXAMPLES },
   { key: 'hint', title: '저는 이렇게 찾으면 돼요', lead: '오늘 입은 옷 색이나 지금 있는 자리. 건너뛰어도 돼요.', ex: '힌트가 있으면 사람들이 나를 훨씬 쉽게 찾아와요', max: 20, placeholder: '예: 검은 옷, 2층 소파', optional: true, examples: HINT_EXAMPLES },
 ];
-let reg = { step: 0, data: { name: '', intro: '', keywords: [], topic: '', hint: '' }, editing: false };
+let reg = { step: 0, data: { name: '', intro: '', keywords: [], quick: [], topic: '', hint: '' }, editing: false };
+function splitKeywords(arr) { return { free: (arr || []).filter(k => !QUICK_ALL.has(k)), quick: QUICK_QUESTIONS.map(x => (arr || []).find(k => x.a.includes(k)) || '') }; }
 
 function showRegister(editing = false) {
-  reg = { step: 0, editing, data: editing ? { name: state.me.name, intro: state.me.intro, keywords: [...state.me.keywords], topic: state.me.topic, hint: state.me.hint } : { name: '', intro: '', keywords: [], topic: '', hint: '' } };
+  const sp = editing ? splitKeywords(state.me.keywords) : { free: [], quick: QUICK_QUESTIONS.map(() => '') };
+  reg = { step: 0, editing, data: editing ? { name: state.me.name, intro: state.me.intro, keywords: sp.free, quick: sp.quick, topic: state.me.topic, hint: state.me.hint } : { name: '', intro: '', keywords: [], quick: sp.quick, topic: '', hint: '' } };
   $('#register').classList.remove('hidden');
   renderRegister();
 }
@@ -528,6 +548,8 @@ function renderRegister() {
       <div class="row" style="gap:8px;margin-bottom:12px;flex-wrap:nowrap"><input class="field" id="kwInput" placeholder="직접 입력 (예: 보드게임)" maxlength="12" style="flex:1;min-width:0"><button class="btn sm ghost" id="kwAdd">추가</button></div>
       <div class="eyebrow dim" style="margin-bottom:8px">추천 키워드</div>
       <div class="chips">${SUGGEST_KEYWORDS.map(k => `<span class="chip ${sel.includes(k) ? 'sel' : ''}" data-s="${esc(k)}">#${esc(k)}</span>`).join('')}</div>`;
+  } else if (s.key === 'quick') {
+    body = `<div class="stack" id="quickWrap">${QUICK_QUESTIONS.map((x, i) => `<div class="quick-row"><div class="quick-q">${esc(x.q)}</div><div class="quick-a">${x.a.map(a => `<button class="quick-btn ${reg.data.quick[i] === a ? 'on' : ''}" data-qi="${i}" data-qa="${esc(a)}">${esc(a)}</button>`).join('')}</div></div>`).join('')}</div>`;
   } else {
     body = `<input class="field" id="regInput" maxlength="${s.max}" placeholder="${esc(s.placeholder)}" value="${esc(reg.data[s.key])}" autocomplete="off" enterkeyhint="next"><div class="counter"><span id="cnt">${chars(reg.data[s.key]).length}</span>/${s.max}</div>
       ${s.examples ? `<div class="eyebrow dim" style="margin:6px 0 8px">눌러서 채우기</div><div class="chips">${s.examples.map(x => `<span class="chip" data-ex="${esc(x)}">${esc(x)}</span>`).join('')}</div>` : ''}`;
@@ -552,11 +574,13 @@ function renderRegister() {
     root.querySelectorAll('[data-s]').forEach(el => el.onclick = () => { const k = el.dataset.s; if (reg.data.keywords.includes(k)) { reg.data.keywords = reg.data.keywords.filter(x => x !== k); renderRegister(); } else add(k); });
     root.querySelectorAll('[data-k]').forEach(el => el.onclick = () => { reg.data.keywords = reg.data.keywords.filter(x => x !== el.dataset.k); renderRegister(); });
   }
+  root.querySelectorAll('[data-qi]').forEach(b => b.onclick = () => { reg.data.quick[+b.dataset.qi] = b.dataset.qa; root.querySelectorAll(`[data-qi="${b.dataset.qi}"]`).forEach(x => x.classList.toggle('on', x === b)); });
   const back = $('#regBack'); if (back) back.onclick = () => { reg.step--; renderRegister(); };
   $('#regNext').onclick = async () => {
-    if (s.key !== 'keywords') reg.data[s.key] = ($('#regInput').value || '').trim();
+    if (s.key !== 'keywords' && s.key !== 'quick') reg.data[s.key] = ($('#regInput').value || '').trim();
     const v = reg.data[s.key];
     if (s.key === 'keywords') { if (v.length < 1) { toast('키워드를 하나 이상 골라 주세요', '', { icon: '🏷️', ms: 2000 }); return; } }
+    else if (s.key === 'quick') { if (v.some(x => !x)) { toast('여섯 개 모두 골라 주세요', '', { icon: '👆', ms: 2000 }); return; } }
     else if (!s.optional && !v) { toast('비워 둘 수 없어요', '', { icon: '✏️', ms: 2000 }); return; }
     if (reg.step < regSteps.length - 1) { reg.step++; renderRegister(); return; }
     await submitRegister();
@@ -566,7 +590,7 @@ async function submitRegister() {
   const btn = $('#regNext'); btn.disabled = true; btn.textContent = '저장 중…';
   await fetchProfiles();
   const d = reg.data;
-  const row = { name: d.name, intro: d.intro, keywords: d.keywords, topic: d.topic, hint: d.hint };
+  const row = { name: d.name, intro: d.intro, keywords: [...d.keywords, ...d.quick.filter(Boolean)], topic: d.topic, hint: d.hint };
   let error;
   if (reg.editing) {
     if (d.name !== state.me.name) row.display = makeDisplay(d.name);
@@ -655,21 +679,13 @@ function spotlightHTML(p) {
 function renderHome() {
   const me = state.me;
   const matches = others().map(p => ({ p, ov: overlap(me, p) })).filter(x => x.ov.length).sort((a, b) => b.ov.length - a.ov.length);
-  const myKw = (me.keywords || []).map(norm).filter(Boolean);
-  const callouts = others().filter(p => p.topic && myKw.some(k => p.topic.includes(k))).map(p => ({ p, k: myKw.find(k => p.topic.includes(k)) }));
   return `<div id="spotWrap">${spotlightHTML(spotlightPick())}</div>
     <div class="card tight me-card">${avatar(me)}<div style="flex:1;min-width:0"><div class="name" style="font-size:17px">${esc(me.display)} <span class="dim">나</span></div><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(me.keywords || []).map(k => '#' + esc(k)).join(' ')}${me.hint ? ` · 📍 ${esc(me.hint)}` : ''}</div></div><button class="btn sm ghost" id="editMe">수정</button></div>
     <div class="banner">🕯️ 여기서 보고, 가서 말 거세요. 쪽지는 없어요. 힌트를 보고 직접 찾아가는 게 이 앱의 전부예요.</div>
     <div class="section"><div class="section-title"><h2>나랑 통하는 사람</h2><span class="sub">겹치는 키워드 순</span></div>
       ${matches.length ? matches.map(({ p, ov }) => personCard(p, { highlight: ov, line: `<b>#${esc(ov[0])}</b>${ov.length > 1 ? ` 외 ${ov.length - 1}개` : ''} 이(가) 겹쳐요. 찾아가서 말 걸어 보세요`, go: 'keyword', extra: ov[0] })).join('') : `<div class="empty">아직 키워드가 겹치는 사람이 없어요.<br>키워드 벽에서 비슷한 사람을 찾아보세요.</div>`}
     </div>
-    <div class="section"><div class="section-title"><h2>혹시 당신 이야기?</h2><span class="sub">내 키워드를 찾는 사람</span></div>
-      ${callouts.length ? callouts.map(({ p, k }) => `<div class="card" style="border-color:rgba(94,154,128,.35)">
-        <div class="row" style="align-items:flex-start;flex-wrap:nowrap">${avatar(p)}<div style="flex:1;min-width:0"><div class="name">${esc(p.display)}</div><div style="font-size:14px;color:var(--fg-2)"><b style="color:var(--fg)">${esc(p.display)}</b>님이 ‘${esc(p.topic)}’을(를) 찾고 있어요. <b style="color:var(--brass-2)">혹시 당신?</b></div></div></div>
-        <div style="margin-top:10px"><span class="chip hit">#${esc(k)}</span></div>
-        <div class="hint-line"><span class="k">Find</span><span class="v">${p.hint ? esc(p.hint) : '<span class="dim">힌트 없음 · 명찰의 키워드를 찾아보세요</span>'}</span></div>
-        <div style="margin-top:12px"><button class="btn block marble" data-go="${p.id}" data-kind="topic">제 이야기예요, 찾아가기 →</button></div></div>`).join('') : `<div class="empty">아직 내 키워드를 찾는 사람이 없어요.<br>조금만 기다려 보세요.</div>`}
-    </div>`;
+    `;
 }
 function renderWall() {
   const counts = {};
