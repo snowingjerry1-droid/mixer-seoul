@@ -769,8 +769,8 @@ function kwChips(p, highlight = [], compact = false) {
   const H = new Set(highlight.map(norm));
   const all = (p.keywords || []);
   if (!compact) return `<div class="chips">${all.map(k => `<span class="chip ${H.has(norm(k)) ? 'hit' : ''}">#${esc(k)}</span>`).join('')}</div>`;
-  const hit = all.filter(k => H.has(norm(k))), rest = all.filter(k => !H.has(norm(k)) && !QUICK_ALL.has(k));
-  const shown = hit.length ? hit : rest.slice(0, 3);
+  const hitI = all.filter(k => H.has(norm(k)) && !QUICK_ALL.has(k)), hitQ = all.filter(k => H.has(norm(k)) && QUICK_ALL.has(k)), rest = all.filter(k => !H.has(norm(k)) && !QUICK_ALL.has(k));
+  const shown = (hitI.length + hitQ.length) ? [...hitI, ...hitQ.slice(0, 2)] : rest.slice(0, 3);
   const more = all.length - shown.length;
   return `<div class="chips">${shown.map(k => `<span class="chip ${H.has(norm(k)) ? 'hit' : ''}">#${esc(k)}</span>`).join('')}${more > 0 ? `<span class="chip dimchip">+${more}</span>` : ''}</div>`;
 }
@@ -792,7 +792,7 @@ function spotlightPick() {
 }
 function spotlightHTML(p) {
   return `<div class="spot"><div class="eyebrow">오늘의 한 줄</div><div class="txt" id="spotTxt">“${esc(p.intro || '소개를 아직 안 적었어요')}”</div>
-    <div class="spread"><span class="who">${esc(p.display)} · ${(p.keywords || []).map(k => '#' + esc(k)).join(' ')}</span>${p.id !== state.me.id ? `<button class="btn sm ghost" data-go="${p.id}" data-kind="plain">더보기</button>` : ''}</div></div>`;
+    <div class="spread"><span class="who">${esc(p.display)} · ${(p.keywords || []).filter(k => !QUICK_ALL.has(k)).map(k => '#' + esc(k)).join(' ')}</span>${p.id !== state.me.id ? `<button class="btn sm ghost" data-go="${p.id}" data-kind="plain">더보기</button>` : ''}</div></div>`;
 }
 function renderHome() {
   const me = state.me;
