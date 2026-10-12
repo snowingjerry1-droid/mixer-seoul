@@ -253,7 +253,8 @@ body.screen{overflow:hidden}
 .sc-pav{width:clamp(70px,13vh,120px);height:clamp(70px,13vh,120px);border-radius:50%;display:grid;place-items:center;font-family:var(--font-display);font-size:clamp(34px,6.5vh,60px);color:#2B190C;box-shadow:0 0 0 6px rgba(255,255,255,.08),0 0 40px var(--pc,var(--glow))}
 .sc-pname{font-family:var(--font-display);font-weight:700;font-size:clamp(40px,8.5vh,80px);line-height:1.15;color:var(--fg)}
 .sc-pintro{font-family:var(--font-display);font-size:clamp(30px,7vh,66px);line-height:1.3;color:var(--fg)}
-.sc-pmeta{font-size:clamp(16px,2.6vh,26px);color:var(--fg-2)}
+.sc-pmeta{font-size:clamp(16px,2.6vh,26px);color:var(--fg-2);line-height:1.6}
+.sc-pmeta .sep{color:var(--fg-3)}
 .sc-pkw{display:flex;gap:10px;flex-wrap:wrap;font-size:clamp(14px,2.2vh,22px)}
 .sc-pkw span{border:1px solid var(--line-2);border-radius:999px;padding:4px 14px;color:var(--peach)}
 .sc-pcount{position:fixed;right:44px;bottom:18px;font-size:clamp(12px,1.8vh,18px);color:var(--fg-3);letter-spacing:.1em}
@@ -966,7 +967,7 @@ async function startScreenMode() {
     return `<div class="sc-person">
       <div class="sc-pleft">
         <div class="sc-pintro">“${esc(p.intro)}”</div>
-        <div class="sc-pmeta">${p.topic ? `💬 ${esc(p.topic)}` : ''}${p.topic && p.hint ? ' · ' : ''}${p.hint ? `📍 ${esc(p.hint)}` : ''}</div>
+        <div class="sc-pmeta">${[p.topic ? `💬 ${esc(p.topic)}` : '', p.song ? `🎵 ${esc(p.song)}` : '', p.hint ? `📍 ${esc(p.hint)}` : ''].filter(Boolean).join('<span class="sep"> · </span>')}</div>
         <div class="sc-pkw">${(p.keywords || []).filter(k => !QUICK_ALL.has(k)).map(k => `<span>#${esc(k)}</span>`).join('')}</div>
       </div>
       <div class="sc-pright"><div class="sc-pqr" id="scPersonQr"></div><div class="sc-pqr-cap">누군지 궁금하면<br>QR을 찍어 보세요</div></div>
