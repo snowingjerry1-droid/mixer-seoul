@@ -244,15 +244,20 @@ body.screen{overflow:hidden}
 .sc-gate-cnt b{font-family:var(--font-display);font-size:clamp(48px,11vh,110px);color:var(--brass-2);text-shadow:0 0 30px var(--glow);margin-right:8px}
 .sc-spot{text-align:center;position:relative}
 .sc-person{animation:personIn .55s cubic-bezier(.2,.9,.3,1.1) both;display:flex;align-items:center;justify-content:center;gap:clamp(24px,5vw,80px)}
-.sc-pleft{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:clamp(8px,1.8vh,18px);max-width:62%}
+.sc-pleft{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:clamp(14px,3.2vh,34px);max-width:60%}
+.sc-plines{display:flex;flex-direction:column;gap:clamp(8px,1.6vh,16px);padding-left:clamp(10px,1.4vw,22px);border-left:3px solid var(--brass)}
+.sc-pline{display:flex;flex-direction:column;gap:2px}
+.sc-pline .k{font-size:clamp(11px,1.6vh,15px);letter-spacing:.18em;color:var(--peach);font-weight:700}
+.sc-pline .v{font-size:clamp(20px,3.3vh,34px);color:var(--fg);line-height:1.3}
 .sc-pright{display:flex;flex-direction:column;align-items:center;gap:10px;flex:none}
-.sc-pqr{background:#fff;padding:12px;border-radius:16px;width:clamp(160px,30vh,260px);height:clamp(160px,30vh,260px)}
+.sc-pqr{background:#fff;padding:14px;border-radius:18px;width:clamp(180px,36vh,320px);height:clamp(180px,36vh,320px);box-shadow:0 20px 60px rgba(0,0,0,.45)}
 .sc-pqr img,.sc-pqr canvas{width:100%!important;height:100%!important}
-.sc-pqr-cap{font-size:clamp(14px,2.2vh,22px);color:var(--fg-2);text-align:center;line-height:1.4}
+.sc-pqr-cap{font-size:clamp(15px,2.4vh,24px);color:var(--fg);text-align:center;line-height:1.4;margin-top:6px}
+.sc-pqr-cap b{color:var(--peach)}
 @keyframes personIn{from{opacity:0;transform:translateX(60px) scale(.96)}to{opacity:1;transform:none}}
 .sc-pav{width:clamp(70px,13vh,120px);height:clamp(70px,13vh,120px);border-radius:50%;display:grid;place-items:center;font-family:var(--font-display);font-size:clamp(34px,6.5vh,60px);color:#2B190C;box-shadow:0 0 0 6px rgba(255,255,255,.08),0 0 40px var(--pc,var(--glow))}
 .sc-pname{font-family:var(--font-display);font-weight:700;font-size:clamp(40px,8.5vh,80px);line-height:1.15;color:var(--fg)}
-.sc-pintro{font-family:var(--font-display);font-size:clamp(30px,7vh,66px);line-height:1.3;color:var(--fg)}
+.sc-pintro{font-family:var(--font-display);font-size:clamp(32px,7.4vh,72px);line-height:1.3;color:var(--fg);text-wrap:balance}
 .sc-pmeta{font-size:clamp(16px,2.6vh,26px);color:var(--fg-2);line-height:1.6}
 .sc-pmeta .sep{color:var(--fg-3)}
 .sc-pkw{display:flex;gap:10px;flex-wrap:wrap;font-size:clamp(14px,2.2vh,22px)}
@@ -302,7 +307,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const POLL_MS = 4000;          // 새로고침 간격
 const SPOTLIGHT_MS = 30000;    // 스포트라이트 교체 간격
 const SCREEN_RANK_MS = 5000;   // 큰 화면: 랭킹 패널(이름 점수·콤비) 표시 시간
-const SCREEN_SPOT_MS = 10000;  // 큰 화면: 스포트라이트 한 사람 표시 시간
+const SCREEN_SPOT_MS = 12000;  // 큰 화면: 스포트라이트 한 사람 표시 시간
 const SCREEN_SPOT_PEOPLE = 5;  // 큰 화면: 스포트라이트 한 차례에 보여 줄 인원
 
 // 등록 질문 예시 칩 (탭하면 입력칸에 채워지고, 고쳐 쓸 수 있음)
@@ -964,13 +969,13 @@ async function startScreenMode() {
   const pickSpot = () => { const pool = state.profiles.filter(p => p.intro && p.id !== lastSpot); if (!pool.length) return null; const p = pickRandom(pool); lastSpot = p.id; return p; };
   const personHTML = (p, n) => {
     if (!p) return `<div class="sc-person"><div class="sc-pintro" style="color:var(--fg-2)">등록하면 여기에 소개가 떠요</div></div>`;
+    const lines = [p.topic ? ['하고 싶은 얘기', p.topic] : null, p.song ? ['오늘 밤 최애곡', p.song] : null, p.hint ? ['지금 위치', p.hint] : null].filter(Boolean);
     return `<div class="sc-person">
       <div class="sc-pleft">
         <div class="sc-pintro">“${esc(p.intro)}”</div>
-        <div class="sc-pmeta">${[p.topic ? `💬 ${esc(p.topic)}` : '', p.song ? `🎵 ${esc(p.song)}` : '', p.hint ? `📍 ${esc(p.hint)}` : ''].filter(Boolean).join('<span class="sep"> · </span>')}</div>
-        <div class="sc-pkw">${(p.keywords || []).filter(k => !QUICK_ALL.has(k)).map(k => `<span>#${esc(k)}</span>`).join('')}</div>
+        ${lines.length ? `<div class="sc-plines">${lines.map(([k, v]) => `<div class="sc-pline"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`).join('')}</div>` : ''}
       </div>
-      <div class="sc-pright"><div class="sc-pqr" id="scPersonQr"></div><div class="sc-pqr-cap">누군지 궁금하면<br>QR을 찍어 보세요</div></div>
+      <div class="sc-pright"><div class="sc-pqr" id="scPersonQr"></div><div class="sc-pqr-cap">누군지 궁금하면<br><b>QR</b>을 찍어 보세요</div></div>
       <div class="sc-pcount">${n} / ${SCREEN_SPOT_PEOPLE}</div></div>`;
   };
   const personQr = (p) => { const el = $('#scPersonQr'); if (!el || !p) return; try { new QRCode(el, { text: `${location.origin}${location.pathname}?p=${p.id}`, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M }); } catch (e) { } };
