@@ -274,6 +274,23 @@ body.screen{overflow:hidden}
 .sc-pkw{display:flex;gap:10px;flex-wrap:wrap;font-size:clamp(14px,2.2vh,22px)}
 .sc-pkw span{border:1px solid var(--line-2);border-radius:999px;padding:4px 14px;color:var(--peach)}
 .sc-pcount{position:fixed;right:44px;bottom:18px;font-size:clamp(12px,1.8vh,18px);color:var(--fg-3);letter-spacing:.1em}
+.sc-music{position:fixed;left:44px;right:44px;bottom:16px;height:clamp(78px,13vh,132px);display:flex;align-items:center;gap:clamp(14px,2vw,28px);padding:10px 16px;background:rgba(51,35,26,.92);border:1px solid var(--line-2);border-radius:18px;box-shadow:0 14px 40px rgba(0,0,0,.45);z-index:5}
+.sc-music.pulse{animation:musicIn .6s cubic-bezier(.2,.9,.3,1.1)}
+@keyframes musicIn{from{transform:translateY(12px);opacity:.4}to{transform:none;opacity:1}}
+.sc-mvid{height:100%;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000;flex:none}
+.sc-mvid iframe{width:100%!important;height:100%!important;display:block;pointer-events:none}
+.sc-minfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sc-minfo .k{font-size:clamp(11px,1.6vh,15px);color:var(--peach);font-weight:700;letter-spacing:.06em}
+.sc-minfo .t{font-family:var(--font-display);font-size:clamp(20px,3.6vh,36px);color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-minfo .r{font-size:clamp(14px,2.4vh,24px);color:var(--fg-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-minfo .r b{color:var(--peach)}
+.sc-mqr{height:100%;aspect-ratio:1;flex:none;background:#fff;border-radius:10px;padding:6px}
+.sc-mqr:empty{display:none}
+.sc-mqr img,.sc-mqr canvas{width:100%!important;height:100%!important}
+.sc-mstart{position:fixed;right:44px;bottom:calc(clamp(78px,13vh,132px) + 30px);z-index:6;min-height:56px;font-size:18px}
+body.has-music #screenView{padding-bottom:calc(clamp(78px,13vh,132px) + 36px)}
+body.has-music .sc-pcount{bottom:calc(clamp(78px,13vh,132px) + 26px)}
+body.has-music .sc-progress{bottom:auto;top:0}
 .sc-spot .txt{font-family:var(--font-display);font-size:clamp(36px,8.5vh,80px);line-height:1.3;color:var(--fg)}
 .sc-spot .who{font-size:clamp(18px,3.4vh,32px);color:var(--fg-2);margin-top:clamp(12px,2.8vh,26px)}
 .sc-spot .kw{margin-top:18px;display:flex;justify-content:center;gap:12px;font-size:clamp(16px,2.6vh,24px);flex-wrap:wrap}
@@ -318,6 +335,7 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const POLL_MS = 4000;          // 새로고침 간격
 const SPOTLIGHT_MS = 30000;    // 스포트라이트 교체 간격
 const SCREEN_RANK_MS = 5000;   // 큰 화면: 랭킹 패널(이름 점수·콤비) 표시 시간
+const MUSIC_SHOW_NAME = false;  // 큰 화면 '지금 나오는 곡' 띠에 신청자 이름까지 보여 줄지 (false면 위치·특징만)
 const SCREEN_SPOT_MS = 12000;  // 큰 화면: 스포트라이트 한 사람 표시 시간
 const SCREEN_SPOT_PEOPLE = 5;  // 큰 화면: 스포트라이트 한 차례에 보여 줄 인원
 
@@ -557,8 +575,8 @@ async function fetchProfiles() {
   if (state.me && data) { state.me = byId(state.me.id) || null; }
 }
 async function fetchState() {
-  const { data, error } = await sb.from('mingle_state').select('open').eq('id', 1).maybeSingle();
-  if (!error && data) { state.open = !!data.open; state.openKnown = true; }
+  const { data, error } = await sb.from('mingle_state').select('open,playlist,cmd,cmd_at').eq('id', 1).maybeSingle();
+  if (!error && data) { state.open = !!data.open; state.openKnown = true; state.playlist = data.playlist || ''; state.cmd = data.cmd || ''; state.cmdAt = data.cmd_at || null; }
 }
 function updateCount() { $('#countPill').textContent = `지금 ${state.profiles.length}명`; }
 // 게이트 상태에 맞춰 화면 전환 (등록된 사람만 해당)
@@ -988,6 +1006,108 @@ function bindView() {
 setInterval(() => { const w = $('#spotWrap'); if (w && state.tab === 'home' && state.me) { const t = $('#spotTxt'); if (t) t.style.opacity = 0; setTimeout(() => { w.innerHTML = spotlightHTML(spotlightPick()); bindView(); }, 400); } }, SPOTLIGHT_MS);
 
 /* =========================================================
+   6-1. 큰 화면 음악 (유튜브 재생목록을 큰 화면이 직접 재생)
+   ========================================================= */
+const music = { player: null, ready: false, src: '', lastCmdAt: undefined, curKey: '', tracks: {} };
+// 관리판에 붙여 넣은 값 → { list: 재생목록ID } 또는 { ids: [영상ID…] }
+function parseMusicSrc(v) {
+  v = (v || '').trim(); if (!v) return null;
+  const m = v.match(/[?&]list=([\w-]+)/) || (/^(PL|OL|RD|UU|FL)[\w-]{10,}$/.test(v) ? [0, v] : null);
+  if (m) return { list: m[1] };
+  const ids = [...v.matchAll(/(?:v=|youtu\.be\/|shorts\/|^|[\s,])([\w-]{11})(?=$|[\s,&?#])/g)].map(x => x[1]);
+  return ids.length ? { ids: [...new Set(ids)] } : null;
+}
+function loadYT() {
+  return new Promise(res => {
+    if (window.YT && window.YT.Player) return res();
+    const prev = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = () => { prev && prev(); res(); };
+    if (!document.getElementById('ytApi')) { const sc = document.createElement('script'); sc.id = 'ytApi'; sc.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(sc); }
+  });
+}
+function setupMusic(root) {
+  root.insertAdjacentHTML('beforeend', `<div class="sc-music hidden" id="scMusic">
+      <div class="sc-mvid"><div id="ytPlayer"></div></div>
+      <div class="sc-minfo"><div class="k">🎵 지금 나오는 곡</div><div class="t" id="scMTitle">불러오는 중…</div><div class="r" id="scMReq"></div></div>
+      <div class="sc-mqr" id="scMQr"></div></div>
+    <button class="btn sc-mstart hidden" id="scMStart">🎵 음악 시작</button>`);
+  $('#scMStart').onclick = () => { $('#scMStart').classList.add('hidden'); if (music.player && music.ready) music.player.playVideo(); };
+  document.addEventListener('keydown', e => {
+    if (!music.player || !music.ready) return;
+    if (e.key === 'ArrowRight') music.player.nextVideo();
+    else if (e.key === 'ArrowLeft') music.player.previousVideo();
+    else if (e.key === ' ') { e.preventDefault(); runMusicCmd('toggle'); }
+  });
+  try { sb.channel('mixer-screen-music').on('postgres_changes', { event: '*', schema: 'public', table: 'mingle_state' }, async () => { await fetchState(); musicSync(); }).subscribe(); } catch (e) { }
+  setInterval(() => updateNowPlaying(), 1500);
+}
+async function fetchTracks() {
+  const { data } = await sb.from('mingle_tracks').select('video_id,profile_ids');
+  if (data) { music.tracks = {}; data.forEach(t => { music.tracks[t.video_id] = t.profile_ids || []; }); }
+}
+function runMusicCmd(c) {
+  const pl = music.player; if (!pl || !music.ready) return;
+  if (c === 'next') pl.nextVideo(); else if (c === 'prev') pl.previousVideo();
+  else if (c === 'toggle') { if (pl.getPlayerState() === 1) pl.pauseVideo(); else { $('#scMStart')?.classList.add('hidden'); pl.playVideo(); } }
+}
+async function musicSync() {
+  const box = $('#scMusic'); if (!box) return;
+  if (state.playlist !== music.src) { music.src = state.playlist; music.curKey = ''; await startPlayer(parseMusicSrc(state.playlist)); }
+  if (music.lastCmdAt === undefined) music.lastCmdAt = state.cmdAt;              // 열기 전 명령은 무시
+  else if (state.cmdAt && state.cmdAt !== music.lastCmdAt) { music.lastCmdAt = state.cmdAt; runMusicCmd(state.cmd); }
+  updateNowPlaying();
+}
+async function startPlayer(src) {
+  const box = $('#scMusic');
+  if (!src) { box.classList.add('hidden'); document.body.classList.remove('has-music'); $('#scMStart').classList.add('hidden'); if (music.player && music.ready) music.player.stopVideo(); return; }
+  box.classList.remove('hidden'); document.body.classList.add('has-music');
+  await loadYT();
+  const load = () => { if (src.list) music.player.loadPlaylist({ list: src.list, listType: 'playlist', index: 0 }); else music.player.loadPlaylist(src.ids, 0); music.player.setLoop(true); };
+  if (music.player) { if (music.ready) load(); return; }
+  music.player = new YT.Player('ytPlayer', {
+    width: 320, height: 180,
+    playerVars: { autoplay: 1, controls: 0, rel: 0, playsinline: 1, disablekb: 1, iv_load_policy: 3 },
+    events: {
+      onReady: () => { music.ready = true; load(); setTimeout(() => { if (music.player.getPlayerState() !== 1) $('#scMStart').classList.remove('hidden'); }, 2500); },
+      onStateChange: (e) => { if (e.data === 1) $('#scMStart').classList.add('hidden'); updateNowPlaying(); },
+      onError: () => { setTimeout(() => { try { music.player.nextVideo(); } catch (e) { } }, 800); },
+    },
+  });
+}
+function currentVideoId() { try { const m = (music.player.getVideoUrl() || '').match(/[?&]v=([\w-]{11})/); return m ? m[1] : ''; } catch (e) { return ''; } }
+function songNorm(x) { return (x || '').toLowerCase().replace(/\(.*?\)|\[.*?\]|official|music|video|audio|lyrics?|visualizer|performance|m\/v|\bmv\b|가사|뮤직비디오|공식/g, '').replace(/[^0-9a-z가-힣]/g, ''); }
+// 지금 영상을 신청한 사람들: 연결표 우선, 없으면 곡명·가수로 맞춰 봄
+function requestersFor(vid, title) {
+  const ids = music.tracks[vid]; if (ids && ids.length) return ids.map(byId).filter(Boolean);
+  const t = songNorm(title); if (!t) return [];
+  return state.profiles.filter(p => {
+    if (!p.song) return false;
+    const [name, ...rest] = p.song.split(/\s+-\s+|\s*-\s*/); const n = songNorm(name), a = songNorm(rest.join(' '));
+    return n.length >= 2 && t.includes(n) && (!a || t.includes(a) || n.length >= 5);
+  });
+}
+function updateNowPlaying() {
+  if (!music.player || !music.ready || !$('#scMusic')) return;
+  const vid = currentVideoId(); let title = ''; try { title = music.player.getVideoData().title || ''; } catch (e) { }
+  if (!vid || !title) return;
+  const reqs = requestersFor(vid, title);
+  const key = [vid, reqs.map(p => p.id).join(','), state.open].join('|');
+  if (key === music.curKey) return; music.curKey = key;
+  const song = reqs[0]?.song || title.replace(/\s*[\(\[][^\)\]]*(MV|M\/V|Official|Audio|Lyric|가사)[^\)\]]*[\)\]]/gi, '').trim();
+  $('#scMTitle').textContent = song;
+  const req = $('#scMReq'), qr = $('#scMQr'); qr.innerHTML = '';
+  if (!state.open) { req.textContent = '신청곡이 흘러나오는 중'; }
+  else if (!reqs.length) { req.textContent = '오늘 모두의 신청곡'; }
+  else if (reqs.length === 1) {
+    const p = reqs[0];
+    req.innerHTML = `신청자는 지금 <b>${esc(p.hint || '어딘가')}</b>${MUSIC_SHOW_NAME ? ` · ${esc(p.display)}` : ''}`;
+    try { new QRCode(qr, { text: `${location.origin}${location.pathname}?p=${p.id}`, width: 120, height: 120, correctLevel: QRCode.CorrectLevel.M }); } catch (e) { }
+  } else {
+    req.innerHTML = `신청자 <b>${reqs.length}명</b> · ${reqs.slice(0, 3).map(p => esc(MUSIC_SHOW_NAME ? `${p.display}(${p.hint || '?'})` : (p.hint || '어딘가'))).join(', ')}${reqs.length > 3 ? ' 외' : ''}`;
+  }
+  const box = $('#scMusic'); box.classList.remove('pulse'); void box.offsetWidth; box.classList.add('pulse');
+}
+
+/* =========================================================
    7. 큰 화면 모드 (?screen=1)
    ========================================================= */
 async function startScreenMode() {
@@ -998,6 +1118,7 @@ async function startScreenMode() {
       <div class="join"><div class="txt"><div class="t1">지금 들어와서 등록하세요</div><div class="t2">${esc(joinUrl.replace(/^https?:\/\//, ''))}</div><div class="cnt"><span id="scCount">0</span>명 입장</div></div><div id="qr"></div></div></div>
     <div class="sc-body"><div class="sc-panel" id="scPanel"></div></div><div class="sc-progress" id="scProg"></div>`;
   try { new QRCode($('#qr'), { text: joinUrl, width: 130, height: 130, correctLevel: QRCode.CorrectLevel.M }); } catch (e) { }
+  setupMusic(root);
   // 순환: 스포트라이트(한 사람 5초 × 6명) → 이름 점수 TOP 10(5초) → 콤비 TOP 5(5초)
   let lastSpot = null, spotTimer = null, rotateTimer = null, idx = 0;
   const pickSpot = () => { const pool = state.profiles.filter(p => p.intro && p.id !== lastSpot); if (!pool.length) return null; const p = pickRandom(pool); lastSpot = p.id; return p; };
@@ -1037,9 +1158,9 @@ async function startScreenMode() {
     prog.style.transition = 'none'; prog.style.width = '0'; void prog.offsetWidth; prog.style.transition = `width ${pn.ms}ms linear`; prog.style.width = '100%';
     rotateTimer = setTimeout(show, pn.ms);
   };
-  await Promise.all([fetchProfiles(), fetchState()]); $('#scCount').textContent = state.profiles.length; show();
+  await Promise.all([fetchProfiles(), fetchState(), fetchTracks()]); $('#scCount').textContent = state.profiles.length; show(); musicSync();
   let wasOpen = state.open;
-  setInterval(async () => { await Promise.all([fetchProfiles(), fetchState()]); $('#scCount').textContent = state.profiles.length;
+  setInterval(async () => { await Promise.all([fetchProfiles(), fetchState(), fetchTracks()]); $('#scCount').textContent = state.profiles.length; musicSync();
     if (!state.open) { const b = $('.sc-gate-cnt b'); if (b) b.textContent = state.profiles.length; }
     if (state.open !== wasOpen) { wasOpen = state.open; idx = 0; show(); if (state.open) sparks(80); } }, POLL_MS);
   keepAwake();
@@ -1060,6 +1181,12 @@ async function startAdminMode(pw) {
       <div class="card" style="border-color:${state.open ? 'var(--brass)' : 'var(--line-2)'}"><div class="spread"><div><div class="eyebrow">${state.open ? '열림' : '닫힘'}</div><div style="font-weight:800;font-size:18px;margin-top:4px">${state.open ? '참가자 화면이 열려 있어요' : '지금은 등록만 받는 중'}</div><div class="muted">${state.open ? '모두가 홈·키워드 벽·궁합·이름점수를 보고 있어요' : '참가자는 등록 후 대기 화면만 봐요. 버튼을 누르면 모든 폰이 동시에 켜져요'}</div></div></div>
         <button class="btn block ${state.open ? 'ghost' : ''}" id="gateBtn" style="margin-top:12px">${state.open ? '참가자 화면 닫기' : '🎉 참가자 화면 열기'}</button></div>
       <a class="btn block marble" href="${location.pathname}?screen=1" target="_blank" rel="noopener" style="margin-bottom:6px;text-decoration:none">대형 화면 모드 열기 ↗</a><div class="dim" style="margin-bottom:8px">새 탭에서 열려요. 그 탭을 프로젝터·TV 화면으로 옮기고 전체 화면(⌃⌘F 또는 F11)으로 두세요.</div>
+      <div class="section"><div class="section-title"><h2>음악 (큰 화면에서 재생)</h2><span class="sub">${state.playlist ? '연결됨' : '아직 없음'}</span></div>
+        <div class="card"><div class="muted" style="margin-bottom:8px">유튜브 재생목록 주소를 붙여 넣고 저장하면 큰 화면이 그 목록을 틀고, 곡이 바뀔 때마다 신청자 위치·특징을 띄워요. 재생목록은 <b>공개</b> 또는 <b>일부 공개</b>여야 해요.</div>
+        <input class="field" id="plInput" placeholder="https://www.youtube.com/playlist?list=…" value="${esc(state.playlist || '')}" autocomplete="off">
+        <div class="row" style="margin-top:10px;flex-wrap:nowrap"><button class="btn" id="plSave" style="flex:2">저장</button><button class="btn ghost" id="plClear" style="flex:1">음악 끄기</button></div>
+        <div class="row" style="margin-top:10px;flex-wrap:nowrap"><button class="btn ghost" data-mc="prev" style="flex:1">⏮ 이전</button><button class="btn ghost" data-mc="toggle" style="flex:1">⏯ 재생/멈춤</button><button class="btn ghost" data-mc="next" style="flex:1">⏭ 다음</button></div>
+        <div class="dim" style="margin-top:8px">큰 화면 노트북에서는 ← → 키로 곡을 넘기고 스페이스로 멈출 수 있어요. 처음 한 번은 큰 화면의 '음악 시작' 버튼을 눌러 주세요.</div></div></div>
       <div class="section"><div class="section-title"><h2>최애곡 리스트</h2><span class="sub">${state.profiles.filter(p => p.song).length}곡</span></div>
         <div class="card"><div class="muted" style="margin-bottom:8px">아래를 복사해서 플레이리스트 작업에 쓰세요. "곡명 - 가수 (신청자)" 한 줄씩이에요.</div>
         <textarea class="field" id="songList" readonly style="min-height:160px;font-size:14px;line-height:1.5;resize:vertical">${esc(state.profiles.filter(p => p.song).map(p => `${p.song} (${p.display})`).join('\n'))}</textarea>
@@ -1069,6 +1196,9 @@ async function startAdminMode(pw) {
       <div class="section"><div class="section-title"><h2>전체 데이터 초기화</h2></div><div class="card" style="border-color:#6B3A32"><div class="muted" style="margin-bottom:10px">프로필을 모두 지워요. 되돌릴 수 없어요.</div><button class="btn block" id="resetBtn" style="background:#B8513F;color:#fff">전체 초기화</button></div></div>`;
     const call = async (action, target) => { const { data } = await sb.rpc('mingle_admin', { pw, action, target: target == null ? null : String(target) }); if (!data?.ok) toast('실패', data?.error || '', { icon: '⚠️' }); };
     root.querySelectorAll('[data-delp]').forEach(b => b.onclick = async () => { b.disabled = true; await call('delete_profile', b.dataset.delp); draw(); });
+    $('#plSave').onclick = async () => { const v = $('#plInput').value.trim(); if (v && !parseMusicSrc(v)) return toast('주소를 확인해 주세요', '유튜브 재생목록이나 영상 주소를 붙여 넣어 주세요', { icon: '⚠️' }); await call('set_playlist', v); toast(v ? '음악을 연결했어요' : '음악을 껐어요', v ? '큰 화면이 몇 초 안에 재생을 시작해요' : '', { icon: '🎵' }); draw(); };
+    $('#plClear').onclick = async () => { await call('set_playlist', ''); toast('음악을 껐어요', '', { icon: '🎵' }); draw(); };
+    root.querySelectorAll('[data-mc]').forEach(b => b.onclick = async () => { await call('cmd', b.dataset.mc); toast(b.dataset.mc === 'next' ? '다음 곡' : b.dataset.mc === 'prev' ? '이전 곡' : '재생/멈춤', '', { icon: '🎵', ms: 1200 }); });
     $('#copySongs').onclick = async () => { const ta = $('#songList'); try { await navigator.clipboard.writeText(ta.value); toast('복사했어요', `${ta.value.split('\n').filter(Boolean).length}곡`, { icon: '🎵' }); } catch (e) { ta.focus(); ta.select(); toast('길게 눌러 복사해 주세요', '', { icon: '🎵' }); } };
     $('#gateBtn').onclick = async () => { const b = $('#gateBtn'); b.disabled = true; await call(state.open ? 'close' : 'open'); toast(state.open ? '참가자 화면을 닫았어요' : '참가자 화면을 열었어요!', state.open ? '' : '모든 폰이 몇 초 안에 켜져요', { icon: state.open ? '🔒' : '🎉' }); draw(); };
     $('#setPw').onclick = async () => { const v = $('#newPw').value.trim(); if (v.length < 4) return toast('4자 이상', '', { icon: '✋' }); await call('set_pw', v); pw = v; history.replaceState(null, '', location.pathname + '?admin=' + encodeURIComponent(v)); toast('비밀번호를 바꿨어요', '주소도 새 비밀번호로 바뀌었어요', { icon: '🔑' }); };
