@@ -146,22 +146,6 @@ main#view{flex:1;padding:8px 18px calc(92px + env(safe-area-inset-bottom,0px));m
 .nametag .kw{color:var(--peach);letter-spacing:.1em;font-size:14px;margin-top:4px;font-weight:700}
 
 /* 홈 */
-.ms-card{position:relative;background:linear-gradient(160deg,rgba(237,117,47,.20),rgba(237,117,47,.06) 55%,var(--card) 100%);border:1px solid rgba(237,117,47,.55);border-radius:22px;padding:18px 18px 14px;margin-bottom:12px;box-shadow:var(--shadow);animation:pop .35s ease both}
-.ms-title{font-family:var(--font-display);font-size:23px;line-height:1.35;margin:8px 0 4px;color:var(--fg);text-wrap:balance}
-.ms-sub{font-size:13px;color:var(--fg-2);margin-bottom:8px}
-.ms-whos{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-.ms-who{display:inline-flex;align-items:center;gap:4px;padding:7px 12px;border-radius:999px;background:var(--bg);border:1px solid var(--line-2);color:var(--fg);font-size:14px;font-weight:600;min-height:36px}
-.ms-who:active{transform:scale(.96)}
-.ms-more{font-size:13px;color:var(--fg-3);align-self:center}
-.ms-open{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:12px}
-.ms-open .k{font-size:12px;color:var(--peach);font-weight:700;letter-spacing:.04em}
-.ms-open .v{font-size:16px;line-height:1.45;margin-top:2px}
-.ms-actions{display:flex;gap:10px}
-.ms-actions .btn{flex:1}
-.ms-actions .btn:last-child{flex:2}
-.ms-help{font-size:12px;color:var(--fg-3);text-align:center;margin-top:10px}
-.ms-undo{display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(95,154,128,.18);border:1px solid rgba(95,154,128,.45);border-radius:12px;padding:8px 12px;margin-bottom:10px;font-size:14px;color:#CFEADD}
-.ms-undo button{color:#fff;font-weight:700;text-decoration:underline;font-size:14px}
 .spot{position:relative;overflow:hidden;background:var(--bg-2);border:1px solid var(--line);border-radius:22px;padding:22px 20px 18px;box-shadow:var(--shadow);margin-bottom:10px}
 .spot::before{content:"";position:absolute;left:50%;top:-80px;width:260px;height:260px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle,rgba(237,117,47,.30) 0,rgba(237,117,47,.08) 45%,transparent 70%);pointer-events:none}
 .spot .txt{font-family:var(--font-display);font-size:23px;line-height:1.4;margin:10px 0 12px;transition:opacity .4s;position:relative}
@@ -765,145 +749,6 @@ function openPending() {
   ls.set('mixer_pending', '');
   if (byId(id)) setTimeout(() => openGo(id, 'plain'), 400);
 }
-/* =========================================================
-   6-2. 오늘의 미션 카드 (말 걸 핑계. 점수·순위 없음)
-   ========================================================= */
-// 관심사 키워드별 미션 문장과 첫마디. 없는 키워드는 아래 기본 문장을 씀
-const MISSION_ASK = {
-  '러닝': ['좋아하는 러닝 코스 하나 물어보기', '러닝 하신다고 해서요. 추천 코스 하나만 알려 주실래요?'],
-  '헬스': ['요즘 운동 루틴 하나 물어보기', '헬스 하신다고 해서요. 요즘 어떤 운동 하세요?'],
-  '클라이밍': ['다니는 암장 물어보기', '클라이밍 하신다고 해서요. 어디 암장 다니세요?'],
-  '등산': ['추천하는 산 하나 물어보기', '등산 좋아하신다고 해서요. 초보도 갈 만한 산 있을까요?'],
-  '캠핑': ['캠핑 장비 하나 추천받기', '캠핑 하신다고 해서요. 장비 하나만 추천해 주실래요?'],
-  '축구': ['응원하는 팀 물어보기', '축구 좋아하신다고 해서요. 어느 팀 응원하세요?'],
-  '테니스': ['테니스 시작한 계기 물어보기', '테니스 치신다고 해서요. 어떻게 시작하셨어요?'],
-  '자전거': ['좋아하는 자전거 길 물어보기', '자전거 타신다고 해서요. 좋은 코스 있을까요?'],
-  '맛집탐방': ['근처 맛집 하나 추천받기', '맛집 다니신다고 해서요. 이 근처 맛집 하나만 알려 주실래요?'],
-  '카페투어': ['최애 카페 하나 물어보기', '카페 다니신다고 해서요. 최애 카페 어디예요?'],
-  '커피덕후': ['인생 원두나 메뉴 물어보기', '커피 좋아하신다고 해서요. 인생 커피 하나만 알려 주세요!'],
-  '디저트': ['최애 디저트 가게 물어보기', '디저트 좋아하신다고 해서요. 최애 가게 있어요?'],
-  '홈쿡': ['자신 있는 요리 하나 물어보기', '요리 하신다고 해서요. 제일 자신 있는 메뉴가 뭐예요?'],
-  '술약': ['추천하는 술 한 가지 듣기', '술 좋아하신다고 해서요. 오늘 하나 추천해 주실래요?'],
-  '와인': ['입문용 와인 하나 추천받기', '와인 좋아하신다고 해서요. 입문용 하나만 추천해 주세요!'],
-  '고양이집사': ['고양이 사진 한 장 구경하기', '고양이 키우신다고 해서요. 사진 한 장만 보여 주실래요?'],
-  '강아지집사': ['강아지 사진 한 장 구경하기', '강아지 키우신다고 해서요. 사진 보여 주실 수 있어요?'],
-  '식물키우기': ['키우는 식물 이름 물어보기', '식물 키우신다고 해서요. 초보도 키우기 쉬운 거 있을까요?'],
-  '넷플릭스': ['요즘 볼 만한 작품 추천받기', '넷플릭스 보신다고 해서요. 요즘 뭐 재밌어요?'],
-  '영화관': ['최근 본 영화 물어보기', '영화 좋아하신다고 해서요. 최근에 본 거 뭐예요?'],
-  '예능덕후': ['요즘 보는 예능 물어보기', '예능 좋아하신다고 해서요. 요즘 뭐 보세요?'],
-  '게임': ['요즘 하는 게임 물어보기', '게임 하신다고 해서요. 요즘 뭐 하세요?'],
-  '보드게임': ['추천 보드게임 하나 듣기', '보드게임 좋아하신다고 해서요. 처음 하기 좋은 거 있어요?'],
-  '방탈출': ['추천 방탈출 테마 듣기', '방탈출 하신다고 해서요. 재밌었던 테마 하나만요!'],
-  '독서': ['최근 읽은 책 물어보기', '책 좋아하신다고 해서요. 최근에 읽은 거 추천해 주실래요?'],
-  '전시회': ['최근 본 전시 물어보기', '전시 다니신다고 해서요. 요즘 볼 만한 전시 있어요?'],
-  '콘서트': ['최근 다녀온 공연 물어보기', '공연 좋아하신다고 해서요. 최근에 뭐 다녀오셨어요?'],
-  '페스티벌': ['가 본 페스티벌 중 최고 듣기', '페스티벌 다니신다고 해서요. 제일 좋았던 데 어디예요?'],
-  '사진': ['최근에 찍은 사진 한 장 구경하기', '사진 찍으신다고 해서요. 최근 사진 하나 보여 주실래요?'],
-  '음악': ['요즘 듣는 노래 하나 물어보기', '음악 좋아하신다고 해서요. 요즘 뭐 들으세요?'],
-  '노래방': ['노래방 18번 물어보기', '노래방 좋아하신다고 해서요. 18번이 뭐예요?'],
-  '패션': ['오늘 옷 포인트 물어보기', '패션 관심 많으시다고 해서요. 오늘 포인트가 뭐예요?'],
-  '덕질': ['최애 소개받기', '덕질 하신다고 해서요. 최애 소개 좀 해 주세요!'],
-  'K-pop': ['최애 그룹 물어보기', 'K-pop 좋아하신다고 해서요. 최애 누구예요?'],
-  '웹툰': ['인생 웹툰 하나 추천받기', '웹툰 보신다고 해서요. 인생 웹툰 하나만요!'],
-  '자취생': ['자취 꿀팁 하나 듣기', '자취하신다고 해서요. 꿀팁 하나만 알려 주세요!'],
-  '취준생': ['서로 응원 한마디 나누기', '취준 중이시라고 해서요. 저도 응원 한마디 드리러 왔어요!'],
-  '창업': ['어떤 걸 만드는지 물어보기', '창업 관심 있으시다고 해서요. 어떤 거 하세요?'],
-};
-const MISSION_KEY = () => `mixer_mission_${state.me?.id || ''}`;
-function missionLoad() { try { return JSON.parse(ls.get(MISSION_KEY()) || '{}') || {}; } catch (e) { return {}; } }
-function missionSave(m) { ls.set(MISSION_KEY(), JSON.stringify(m)); }
-function missionOpposite(k) { const q = QUICK_QUESTIONS.find(x => x.a.includes(k)); return q ? q.a.find(a => a !== k) : null; }
-// 미션 대상자 (실제 참가자 데이터에서 계산)
-function missionTargets(m) {
-  const o = others();
-  if (m.type === 'kw' || m.type === 'opp') return o.filter(p => (p.keywords || []).map(norm).includes(m.p));
-  if (m.type === 'song') return o.filter(p => p.song === m.p);
-  if (m.type === 'topic') return o.filter(p => p.topic === m.p);
-  if (m.type === 'compat') { const p = byId(m.p); return p ? [p] : []; }
-  return [];
-}
-function missionText(m) {
-  if (m.type === 'kw') { const a = MISSION_ASK[m.p]; return { title: `#${m.p} 고른 사람에게 ${a ? a[0] : `요즘 ${m.p} 얘기 듣기`}`, open: a ? a[1] : `#${m.p} 고르셨던데, 요즘 어떠세요?` }; }
-  if (m.type === 'opp') {
-    const mine = missionOpposite(m.p), L = k => (k.endsWith('파') ? k : `${k}파`);
-    const T = {
-      '아이폰': ['아이폰 쓰는 사람 찾아서 장점 하나 듣기', `저는 ${mine} 쓰는데요, 아이폰 장점 하나만 알려 주세요!`],
-      '갤럭시': ['갤럭시 쓰는 사람 찾아서 장점 하나 듣기', `저는 ${mine} 쓰는데요, 갤럭시 장점 하나만 알려 주세요!`],
-      '바다': ['여행 가면 바다파인 사람 찾아서 이유 듣기', '저는 산파인데요, 바다가 왜 좋은지 궁금해서요!'],
-      '산': ['여행 가면 산파인 사람 찾아서 이유 듣기', '저는 바다파인데요, 산이 왜 좋은지 궁금해서요!'],
-      '술': ['한 잔 하면 술파인 사람 찾아서 오늘의 한 잔 추천받기', '저는 커피파인데요, 오늘 마실 거 하나만 추천해 주세요!'],
-      '커피': ['한 잔 하면 커피파인 사람 찾아서 최애 메뉴 듣기', '저는 술파인데요, 커피는 뭐 드세요?'],
-    }[m.p];
-    return T ? { title: T[0], open: T[1] } : { title: `나와 반대인 ${L(m.p)} 한 명 찾아서 이유 듣기`, open: `저는 ${L(mine)}인데요, ${L(m.p)}인 이유가 너무 궁금해서요!` };
-  }
-  if (m.type === 'song') return { title: `‘${m.p}’ 신청한 사람 찾아서 고른 이유 듣기`, open: `이 노래 신청하셨죠? 왜 이 곡 고르셨어요?` };
-  if (m.type === 'topic') return { title: `‘${m.p}’ 찾는 사람에게 하나 알려 주기`, open: `‘${m.p}’ 찾으신다고 해서 왔어요!` };
-  if (m.type === 'compat') return { title: `나와 이름 궁합 ${m.pct}%인 사람 찾아서 결과 알려 주기`, open: `우리 이름 궁합이 ${m.pct}%래요. 알려 드리러 왔어요!` };
-  return { title: '', open: '' };
-}
-const missionId = m => `${m.type}:${m.p}`;
-// 후보 미션 전체 (대상이 1명 이상인 것만)
-function missionPool() {
-  const me = state.me, o = others(), pool = [];
-  const myInt = (me.keywords || []).map(norm).filter(k => !QUICK_ALL.has(k));
-  const counts = {}; o.forEach(p => (p.keywords || []).forEach(k => { const n = norm(k); if (n && !QUICK_ALL.has(n)) counts[n] = (counts[n] || 0) + 1; }));
-  Object.keys(counts).forEach(k => pool.push({ type: 'kw', p: k, shared: myInt.includes(k), n: counts[k] }));
-  (me.keywords || []).filter(k => QUICK_ALL.has(k)).forEach(k => { const opp = missionOpposite(k); if (opp && o.some(p => (p.keywords || []).includes(opp))) pool.push({ type: 'opp', p: opp }); });
-  [...new Set(o.map(p => p.song).filter(Boolean))].forEach(x => pool.push({ type: 'song', p: x }));
-  [...new Set(o.map(p => p.topic).filter(Boolean))].forEach(x => pool.push({ type: 'topic', p: x }));
-  const top = myPairs()[0]; if (top && top.pct >= 60) pool.push({ type: 'compat', p: top.p.id, pct: top.pct });
-  return pool.filter(m => missionTargets(m).length > 0);
-}
-// 다음 미션: 첫 미션은 나와 겹치는 키워드 중 대상이 많은 것, 이후는 종류를 섞어서
-function missionNext(st) {
-  const used = new Set([...(st.done || []), ...(st.skip || [])]);
-  let pool = missionPool().filter(m => !used.has(missionId(m)));
-  if (!pool.length && (st.skip || []).length) { st.skip = []; pool = missionPool().filter(m => !(st.done || []).includes(missionId(m))); }
-  if (!pool.length) return null;
-  if (!(st.done || []).length && !(st.skip || []).length) {
-    const shared = pool.filter(m => m.type === 'kw' && m.shared).sort((a, b) => b.n - a.n);
-    if (shared[0]) return shared[0];
-  }
-  const lastType = st.cur?.type; const order = ['opp', 'kw', 'song', 'topic', 'kw', 'compat'];
-  const want = order[((st.done || []).length + (st.skip || []).length) % order.length];
-  const seed = hashStr((state.me.id || '') + (st.done || []).length + (st.skip || []).length);
-  const pick = arr => arr[seed % arr.length];
-  const typed = pool.filter(m => m.type === want && m.type !== lastType);
-  return typed.length ? pick(typed) : pick(pool.filter(m => m.type !== lastType).length ? pool.filter(m => m.type !== lastType) : pool);
-}
-function missionCurrent() {
-  const st = missionLoad();
-  if (st.cur && missionTargets(st.cur).length === 0) { st.cur = null; }           // 대상이 사라지면 새 미션
-  if (!st.cur) { st.cur = missionNext(st); missionSave(st); }
-  return st;
-}
-function missionHTML() {
-  if (!state.me) return '';
-  const st = missionCurrent(), m = st.cur, done = (st.done || []).length;
-  const undo = st.lastDone && Date.now() - st.lastDone.at < 10000;
-  const undoBar = undo ? `<div class="ms-undo">✓ 미션 하나 해냈어요 <button id="msUndo">되돌리기</button></div>` : '';
-  if (!m) return `<div class="ms-card">${undoBar}<div class="eyebrow">오늘의 미션</div><div class="ms-title">준비한 미션을 다 했어요</div><div class="muted">이제 키워드 벽이나 궁합에서 자유롭게 둘러보세요.</div><div class="ms-actions"><button class="btn ghost" id="msReset">처음부터 다시</button></div></div>`;
-  const t = missionText(m), targets = missionTargets(m);
-  const chips = targets.slice(0, 4).map(p => `<button class="ms-who" data-go="${p.id}" data-kind="plain"><span>📍</span>${esc(p.hint || '위치 미정')}</button>`).join('');
-  return `<div class="ms-card">${undoBar}
-    <div class="spread"><div class="eyebrow">오늘의 미션 · ${done + 1}번째</div>${done ? `<span class="dim">오늘 ${done}개 해냈어요</span>` : ''}</div>
-    <div class="ms-title">${esc(t.title)}</div>
-    <div class="ms-sub">찾아갈 수 있는 사람 ${targets.length}명</div>
-    <div class="ms-whos">${chips}${targets.length > 4 ? `<span class="ms-more">+${targets.length - 4}명</span>` : ''}</div>
-    <div class="ms-open"><div class="k">이렇게 시작해 보세요</div><div class="v">“미션이라서요! ${esc(t.open)}”</div></div>
-    <div class="ms-actions"><button class="btn ghost" id="msSkip">다른 미션</button><button class="btn" id="msDone">했어요</button></div>
-    <div class="ms-help">미션은 말 걸 핑계예요. 점수도 순위도 없어요.</div>
-  </div>`;
-}
-function bindMission() {
-  const re = () => { const w = $('#msWrap'); if (w) { w.innerHTML = missionHTML(); bindMission(); } };
-  const d = $('#msDone'); if (d) d.onclick = () => { const st = missionLoad(); if (!st.cur) return; st.done = [...(st.done || []), missionId(st.cur)]; st.lastDone = { at: Date.now(), m: st.cur }; st.cur = missionNext(st); missionSave(st); sparks(24); re(); setTimeout(() => { const s2 = missionLoad(); if (s2.lastDone && Date.now() - s2.lastDone.at >= 10000) re(); }, 10200); };
-  const k = $('#msSkip'); if (k) k.onclick = () => { const st = missionLoad(); if (!st.cur) return; st.skip = [...(st.skip || []), missionId(st.cur)]; st.cur = missionNext(st); missionSave(st); re(); };
-  const u = $('#msUndo'); if (u) u.onclick = () => { const st = missionLoad(); if (!st.lastDone) return; const id = missionId(st.lastDone.m); st.done = (st.done || []).filter(x => x !== id); st.cur = st.lastDone.m; st.lastDone = null; missionSave(st); re(); };
-  const r = $('#msReset'); if (r) r.onclick = () => { missionSave({}); re(); };
-  document.querySelectorAll('#msWrap [data-go]').forEach(b => b.onclick = () => openGo(b.dataset.go, b.dataset.kind, b.dataset.extra));
-}
-
 // 문이 열리기 전 대기 화면
 function showWaiting() {
   const me = state.me; const root = $('#waiting'); root.classList.remove('hidden');
@@ -972,7 +817,7 @@ function renderHome() {
   // 관심사 키워드(직접 고른 것) 겹침을 우선, 성향 답은 보조. 관심사 1개 이상 또는 성향 4개 이상 겹칠 때만 표시
   const matches = others().map(p => { const ov = overlap(me, p); const it = ov.filter(k => !QUICK_ALL.has(k)); const qk = ov.filter(k => QUICK_ALL.has(k)); return { p, ov: [...it, ...qk], it: it.length, qk: qk.length }; })
     .filter(x => x.it >= 1 || x.qk >= 4).sort((a, b) => (b.it * 3 + b.qk) - (a.it * 3 + a.qk)).slice(0, MATCH_MAX);
-  return `<div id="msWrap">${missionHTML()}</div><div id="spotWrap">${spotlightHTML(spotlightPick())}</div>
+  return `<div id="spotWrap">${spotlightHTML(spotlightPick())}</div>
     <div class="card tight me-card">${avatar(me)}<div style="flex:1;min-width:0"><div class="name" style="font-size:17px">${esc(me.display)} <span class="dim">나</span></div><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${me.hint ? `📍 ${esc(me.hint)}` : '📍 위치나 옷 특징을 적어 두면 찾아오기 쉬워요'}</div></div><button class="btn sm ghost" id="editMe">위치·특징 바꾸기</button></div>
     <div class="section"><div class="section-title"><h2>${matches.length ? `지금 말 걸 사람 <b style="color:var(--brass-2)">${matches.length}명</b>` : '아직 겹치는 사람이 없어요'}</h2><span class="sub">겹치는 순</span></div>
       ${matches.length ? matches.map(({ p, ov }) => personCard(p, { highlight: ov, line: `<b>#${esc(ov[0])}</b>${ov.length > 1 ? ` 외 ${ov.length - 1}개` : ''} 겹쳐요`, go: 'keyword', extra: ov[0] })).join('') : `<div class="empty">아직 키워드가 겹치는 사람이 없어요.<br>키워드 벽에서 비슷한 사람을 찾아보세요.</div>`}
@@ -1148,7 +993,6 @@ function openHintEditor() {
 }
 function bindView() {
   const v = $('#view');
-  bindMission();
   v.querySelectorAll('[data-go]').forEach(b => b.onclick = () => openGo(b.dataset.go, b.dataset.kind, b.dataset.extra));
   const edit = $('#editMe'); if (edit) edit.onclick = openHintEditor;
   v.querySelectorAll('[data-wall]').forEach(k => k.onclick = () => { state.wallKw = k.dataset.wall; render(); setTimeout(() => { const s = v.querySelectorAll('.section')[1]; s && s.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50); });
