@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<meta name="theme-color" content="#2B190C">
+<meta name="theme-color" content="#0A0908">
 <title>MIXER SEOUL · 데모</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -131,7 +131,7 @@ main#view{flex:1;padding:8px 18px calc(92px + env(safe-area-inset-bottom,0px));m
 .quick-a{display:flex;gap:8px}
 .quick-btn{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line-2);background:var(--bg-2);color:var(--fg);font-weight:700;font-size:16px;transition:all .15s}
 .quick-btn.on{background:var(--brass);border-color:var(--brass);color:#FFF4E8;box-shadow:0 0 14px var(--glow)}
-.reg-actions{display:flex;gap:10px;margin-top:12px;position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px));background:var(--card);padding-top:8px;z-index:2}
+.reg-actions{display:flex;gap:10px;margin-top:12px}
 .reg-actions .btn{flex:1}
 .field-err{min-height:18px;margin-top:10px;font-size:13px;color:#FFB4A3;text-align:center}
 .big-kw{font-family:var(--font-display);font-size:40px;color:#FFF4E8;background:linear-gradient(135deg,#F79350,#ED752F);display:inline-block;padding:10px 28px;border-radius:999px;animation:bounceIn .6s cubic-bezier(.2,.9,.3,1.3) both;box-shadow:0 0 40px var(--glow)}
@@ -300,6 +300,50 @@ body.has-music .sc-progress{bottom:auto;top:0}
 /* 관리자 */
 .admin-row{display:flex;gap:10px;align-items:center;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:6px;font-size:14px}
 .admin-row .x{margin-left:auto}
+/* ── 블랙 테마 · 각진 모서리 · 빛번짐 제거 (2026-10-18) ── */
+:root{
+  --bg:#0A0908; --bg-2:#121110; --card:#171513; --card-2:#1D1A17; --line:#2A2622; --line-2:#3A342E;
+  --fg:#F4F1EC; --fg-2:#C8BFB4; --fg-3:#8C8379;
+  --brass:#ED752F; --brass-2:#F2853F; --brass-soft:rgba(237,117,47,.14); --glow:transparent;
+  --peach:#C9A27A; --marble:#B08A63; --marble-2:#D9BC98; --marble-soft:rgba(201,162,122,.12);
+  --radius:12px; --radius-sm:8px; --shadow:0 8px 24px rgba(0,0,0,.5); --shadow-sm:0 2px 8px rgba(0,0,0,.4);
+}
+body,#register,#waiting{background:var(--bg);background-image:none}
+*{text-shadow:none!important}
+.spot::before,.cloud::before{display:none}
+.logo{filter:none}
+.topbar{background:rgba(10,9,8,.92)}
+.tabs{background:rgba(18,17,16,.97)}
+.card,.reg-card,.spot,.cloud,.rank-list .item,.sc-rank .it,.admin-row,.reasons .r,.openers .o,.profile-lines .pl,.hint-line,.next-do,.empty,.banner,.nametag,.go-card .hint,.sc-music,.ms-card{border-radius:var(--radius)}
+.card,.reg-card,.spot,.cloud{background:var(--card)}
+.nametag::before{border-radius:8px}
+.btn{border-radius:10px;box-shadow:none}
+.btn.sm{border-radius:8px}
+.field{border-radius:8px}
+.chip,.cloud .kw,.sc-cloud .kw,.ms-who,.sc-spot .kw span,.sc-pkw span,.wait-pulse,.count-pill{border-radius:6px}
+.modal{border-radius:16px 16px 0 0}
+.toast{border-radius:10px}
+.icon-btn,.avatar{border-radius:8px}
+.slot .d,.quick-btn{border-radius:8px}
+.pyr .n,.pyr .ch{border-radius:6px}
+#qr,.sc-pqr,.sc-mqr,.sc-mvid{border-radius:8px}
+.big-kw{border-radius:10px;box-shadow:none;background:var(--brass);color:#120A04}
+.title-tag{border-radius:8px;box-shadow:none}
+.chip.hit{background:var(--brass);color:#120A04;border-color:var(--brass);box-shadow:none;animation:none}
+.chip.sel,.slot .d.stop,.pyr .prow:last-child .n,.quick-btn.on,.cloud .kw.mine,.dots i.on,.wait-pulse span,.sc-progress,.spark,.tab.active::after{box-shadow:none}
+.cloud .kw.mine{outline:2px solid var(--brass);outline-offset:2px}
+.brand .lamp,.reg-head .lamp{box-shadow:none;animation:none;background:var(--brass)}
+.result-big{color:var(--brass)}
+.rank-list .item:nth-child(1) .no,.sc-rank .it:nth-child(1) .no{color:var(--brass)}
+.rank-list .item:nth-child(2) .no,.sc-rank .it:nth-child(2) .no{color:var(--fg)}
+.rank-list .item:nth-child(3) .no,.sc-rank .it:nth-child(3) .no{color:var(--peach)}
+.c0{background:#2A1A10;color:#F2A26B;border-color:#4A2A16!important}
+.c1{background:#221C16;color:#E4CBAA;border-color:#3D3227!important}
+.c2{background:#1B1B1B;color:#EDEDED;border-color:#333!important}
+.c3{background:#2A1F17;color:#D8B48C;border-color:#46352A!important}
+.c4{background:#161412;color:#C8BFB4;border-color:#2E2A26!important}
+.banner{background:var(--card-2);border-color:var(--line-2);color:var(--fg-2)}
+.ms-card{background:var(--card)}
 </style>
 </head>
 <body>
@@ -343,6 +387,11 @@ const SCREEN_SPOT_PEOPLE = 5;  // 큰 화면: 스포트라이트 한 차례에 �
 const INTRO_EXAMPLES = ['요즘 빵에 푹 빠진 사람','주말엔 무조건 집','커피 없으면 못 사는 사람','과제 미루고 넷플릭스 보는 중','헬스 끊고 3일 간 사람','자취 요리 도전 중','카페 투어가 취미','밤에 더 살아나는 야행성','즉흥으로 떠나는 거 좋아해요','덕질이 삶의 원동력','새로운 사람 만나는 거 좋아해요','조용히 듣는 게 편한 사람','사진 찍는 게 제일 재밌어요','요즘 러닝 시작했어요','플레이리스트 만드는 게 취미','방탈출 성공률 높은 편'];
 const TOPIC_EXAMPLES = ['맛집 추천해 줄 분','요즘 뭐가 재밌는지 알려 줄 분','넷플릭스 뭐 볼지 알려 줄 분','여행지 추천해 줄 분','운동 같이 시작할 분','플레이리스트 공유해 줄 분','카페 추천해 줄 분','취준·진로 얘기 나눌 분','자취 꿀팁 알려 줄 분','같은 전공 얘기 할 분','덕질 얘기 나눌 분','요즘 읽을 책 추천해 줄 분','주말에 뭐 하는지 궁금해요','MBTI 얘기 해 볼 분'];
 const HINT_EXAMPLES = ['검은 옷','흰 셔츠','안경','모자','후드티','청자켓','1층 테이블','2층 소파','바 근처','입구 쪽','창가','계단 옆'];
+// 위치·특징 예시 칩 (이모지는 보기용, 누르면 글자만 채워짐)
+const PLACE_EXAMPLES = ['🍸 바 근처','🛋️ 소파 자리','💡 램프 테이블','🖥️ 스크린 앞','🏛️ 메인 홀','🪟 창가','🚪 입구 쪽','🪜 계단 옆'];
+const LOOK_EXAMPLES = ['🖤 검은 옷','🤍 흰 셔츠','👓 안경','🧢 모자','🧥 후드티','👖 청자켓','🧶 니트','🧥 코트','👜 가방','👟 운동화'];
+// 화면 표시용 위치·특징 한 줄
+function whereText(place, look) { return [place ? `📍 ${place}` : '', look ? `👕 ${look}` : ''].filter(Boolean).join(' · '); }
 
 // 양자택일 질문: 답이 그대로 키워드가 되어 '나랑 통하는 사람' 겹침에 쓰임
 const QUICK_QUESTIONS = [
@@ -571,7 +620,7 @@ document.addEventListener('click', keepAwake, { once: true });
    ========================================================= */
 async function fetchProfiles() {
   const { data, error } = await sb.from('mingle_profiles').select('*').order('created_at');
-  if (!error && data) state.profiles = data;
+  if (!error && data) state.profiles = data.map(p => ({ ...p, place: p.hint || '', hint: whereText(p.hint, p.look) }));
   if (state.me && data) { state.me = byId(state.me.id) || null; }
 }
 async function fetchState() {
@@ -622,21 +671,22 @@ const regSteps = [
   { key: 'quick', title: '취향 밸런스 게임', lead: '고민 없이 톡톡. 같은 편이면 반갑고, 다른 편이면 할 말이 생겨요.', ex: '여섯 개 모두 골라야 다음으로 넘어가요' },
   { key: 'topic', title: '오늘 이런 얘기 하고 싶어요', lead: '듣고 싶은 추천이나 궁금한 것, 하나만 적어요.', ex: '내 카드에 TALK 로 보여서, 말 걸 거리가 돼요', max: 30, placeholder: '예: 맛집 추천해 줄 분', examples: TOPIC_EXAMPLES },
   { key: 'song', title: '오늘 밤 듣고 싶은 최애곡', lead: '모인 곡으로 플레이리스트를 만들어 유튜브에서 틀어요. 그래서 곡명과 가수 이름을 정확하게 적어 주세요.', ex: '<b>곡명 - 가수</b> 형태로. 예: <b>밤편지 - 아이유</b>, <b>Supernova - aespa</b>', max: 40, placeholder: '예: 밤편지 - 아이유' },
-  { key: 'hint', title: '저는 이렇게 찾으면 돼요', lead: '지금 있는 자리나 오늘 옷 특징. 사람들이 이걸 보고 찾아와요.', ex: '예: 검은 옷, 2층 소파, 바 근처', max: 20, placeholder: '예: 검은 옷, 2층 소파', examples: HINT_EXAMPLES },
+  { key: 'hint', title: '📍 지금 어디쯤 있어요?', lead: '지금 있는 자리를 적어 주세요. 자리를 옮기면 홈에서 바로 바꿀 수 있어요.', ex: '사람들이 이걸 보고 찾아와요', max: 20, placeholder: '예: 바 근처', examples: PLACE_EXAMPLES },
+  { key: 'look', title: '👕 오늘 나를 알아볼 특징', lead: '옷 색이나 눈에 띄는 것 하나. 사람들이 이걸 보고 알아봐요.', ex: '예: 검은 옷, 안경', max: 20, placeholder: '예: 검은 옷, 안경', examples: LOOK_EXAMPLES },
 ];
-let reg = { step: 0, data: { name: '', intro: '', keywords: [], quick: [], topic: '', song: '', hint: '' }, editing: false };
+let reg = { step: 0, data: { name: '', intro: '', keywords: [], quick: [], topic: '', song: '', hint: '', look: '' }, editing: false };
 function splitKeywords(arr) { return { free: (arr || []).filter(k => !QUICK_ALL.has(k)), quick: QUICK_QUESTIONS.map(x => (arr || []).find(k => x.a.includes(k)) || '') }; }
 
 function showRegister(editing = false) {
   const sp = editing ? splitKeywords(state.me.keywords) : { free: [], quick: QUICK_QUESTIONS.map(() => '') };
-  reg = { step: 0, editing, data: editing ? { name: state.me.name, intro: state.me.intro, keywords: sp.free, quick: sp.quick, topic: state.me.topic, song: state.me.song || '', hint: state.me.hint } : { name: '', intro: '', keywords: [], quick: sp.quick, topic: '', song: '', hint: '' } };
+  reg = { step: 0, editing, data: editing ? { name: state.me.name, intro: state.me.intro, keywords: sp.free, quick: sp.quick, topic: state.me.topic, song: state.me.song || '', hint: state.me.place || '', look: state.me.look || '' } : { name: '', intro: '', keywords: [], quick: sp.quick, topic: '', song: '', hint: '', look: '' } };
   $('#register').classList.remove('hidden');
   renderRegister();
 }
 function renderRegister() {
   const root = $('#register');
   const s = regSteps[reg.step];
-  const groups = [['나', 0, 1], ['취향', 2, 3], ['오늘', 4, 5, 6]];
+  const groups = [['나', 0, 1], ['취향', 2, 3], ['오늘', 4, 5, 6, 7]];
   const g = groups.find(x => x.slice(1).includes(reg.step));
   const pct = Math.round(((reg.step + 1) / (regSteps.length + 1)) * 100);
   const left = regSteps.length - reg.step - 1;
@@ -657,7 +707,7 @@ function renderRegister() {
       ${s.examples ? `<div class="eyebrow dim" style="margin:6px 0 8px">예시</div><div class="chips">${s.examples.map(x => `<span class="chip" data-ex="${esc(x)}">${esc(x)}</span>`).join('')}</div>` : ''}`;
   }
   root.innerHTML = `<div class="reg-wrap">
-    <div class="reg-head"><img class="logo" src="logo.png" alt="MIXER SEOUL"><div class="muted" style="margin-top:10px">${reg.editing ? '내 정보 수정' : '오늘 밤, 먼저 말 걸 핑계를 만들어 드릴게요'}</div></div>
+    <div class="reg-head"><img class="logo" src="logo.png?v=3" alt="MIXER SEOUL"><div class="muted" style="margin-top:10px">${reg.editing ? '내 정보 수정' : '오늘 밤, 먼저 말 걸 핑계를 만들어 드릴게요'}</div></div>
     ${dots}
     <div class="reg-card" key="${reg.step}">
       
@@ -670,7 +720,7 @@ function renderRegister() {
     </div></div>`;
   const inp = $('#regInput');
   if (inp) { if (!s.examples) setTimeout(() => inp.focus(), 50); inp.addEventListener('input', () => { $('#cnt').textContent = chars(inp.value).length; }); inp.addEventListener('keydown', e => { if (e.key === 'Enter') $('#regNext').click(); });
-    root.querySelectorAll('[data-ex]').forEach(c => c.onclick = () => { inp.value = c.dataset.ex; $('#cnt').textContent = chars(inp.value).length; root.querySelectorAll('[data-ex]').forEach(x => x.classList.toggle('sel', x === c)); }); }
+    root.querySelectorAll('[data-ex]').forEach(c => c.onclick = () => { inp.value = c.dataset.ex.replace(/^[^\p{L}\p{N}]+/u, '').trim(); $('#cnt').textContent = chars(inp.value).length; root.querySelectorAll('[data-ex]').forEach(x => x.classList.toggle('sel', x === c)); }); }
   if (s.key === 'keywords') {
     const add = k => { k = norm(k).replace(/\s+/g, ''); if (!k) return; if (reg.data.keywords.includes(k)) return; if (reg.data.keywords.length >= 3) { toast('키워드는 3개까지', '하나를 빼고 다시 골라 주세요', { icon: '✋', ms: 2500 }); return; } reg.data.keywords.push(k); renderRegister(); };
     $('#kwAdd').onclick = () => add($('#kwInput').value);
@@ -697,7 +747,7 @@ async function submitRegister() {
   const btn = $('#regNext'); btn.disabled = true; btn.textContent = '저장 중…';
   await fetchProfiles();
   const d = reg.data;
-  const row = { name: d.name, intro: d.intro, keywords: [...d.keywords, ...d.quick.filter(Boolean)], topic: d.topic, song: d.song, hint: d.hint };
+  const row = { name: d.name, intro: d.intro, keywords: [...d.keywords, ...d.quick.filter(Boolean)], topic: d.topic, song: d.song, hint: d.hint, look: d.look };
   let error;
   if (reg.editing) {
     if (d.name !== state.me.name) row.display = makeDisplay(d.name);
@@ -753,7 +803,7 @@ function openPending() {
 function showWaiting() {
   const me = state.me; const root = $('#waiting'); root.classList.remove('hidden');
   root.innerHTML = `<div class="reg-wrap" style="justify-content:center;text-align:center">
-    <div class="reg-head"><img class="logo" src="logo.png" alt="MIXER SEOUL"></div>
+    <div class="reg-head"><img class="logo" src="logo.png?v=3" alt="MIXER SEOUL"></div>
     <div class="reg-card">
       <div class="eyebrow">등록 완료</div>
       <h2 style="font-size:24px;margin:8px 0 14px">등록 완료, 조금만 기다려 주세요</h2>
@@ -818,7 +868,7 @@ function renderHome() {
   const matches = others().map(p => { const ov = overlap(me, p); const it = ov.filter(k => !QUICK_ALL.has(k)); const qk = ov.filter(k => QUICK_ALL.has(k)); return { p, ov: [...it, ...qk], it: it.length, qk: qk.length }; })
     .filter(x => x.it >= 1 || x.qk >= 4).sort((a, b) => (b.it * 3 + b.qk) - (a.it * 3 + a.qk)).slice(0, MATCH_MAX);
   return `<div id="spotWrap">${spotlightHTML(spotlightPick())}</div>
-    <div class="card tight me-card">${avatar(me)}<div style="flex:1;min-width:0"><div class="name" style="font-size:17px">${esc(me.display)} <span class="dim">나</span></div><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${me.hint ? `📍 ${esc(me.hint)}` : '📍 위치나 옷 특징을 적어 두면 찾아오기 쉬워요'}</div></div><button class="btn sm ghost" id="editMe">위치·특징 바꾸기</button></div>
+    <div class="card tight me-card">${avatar(me)}<div style="flex:1;min-width:0"><div class="name" style="font-size:17px">${esc(me.display)} <span class="dim">나</span></div><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${me.hint ? esc(me.hint) : '📍 위치와 👕 특징을 적어 두면 찾아오기 쉬워요'}</div></div><button class="btn sm ghost" id="editMe">위치·특징 바꾸기</button></div>
     <div class="section"><div class="section-title"><h2>${matches.length ? `지금 말 걸 사람 <b style="color:var(--brass-2)">${matches.length}명</b>` : '아직 겹치는 사람이 없어요'}</h2><span class="sub">겹치는 순</span></div>
       ${matches.length ? matches.map(({ p, ov }) => personCard(p, { highlight: ov, line: `<b>#${esc(ov[0])}</b>${ov.length > 1 ? ` 외 ${ov.length - 1}개` : ''} 겹쳐요`, go: 'keyword', extra: ov[0] })).join('') : `<div class="empty">아직 키워드가 겹치는 사람이 없어요.<br>키워드 벽에서 비슷한 사람을 찾아보세요.</div>`}
     </div>
@@ -859,7 +909,7 @@ function renderCompat() {
     <div id="compatStage">${sel ? `<div class="card"><div class="vs">${esc(state.me.display)} <span class="x">✕</span> ${esc(sel.display)}</div><div style="margin-top:12px"><button class="btn block marble" id="compatRun">궁합 계산 시작</button></div></div>` : ''}</div>
   </div>
   <div class="section"><div class="section-title"><h2>나의 콤비 랭킹</h2><span class="sub">${esc(state.me.display)} 기준 TOP 5</span></div>
-    <div class="rank-list">${mine.length ? mine.slice(0, 5).map((c, i) => `<div class="item"><span class="no">${i + 1}</span>${avatar(c.p, 34)}<div class="who"><div class="name">${esc(c.p.display)}</div><div class="dim">${esc(compatPhrase(c.pct))}${c.p.hint ? ` · 📍 ${esc(c.p.hint)}` : ''}</div></div><span class="pct">${c.pct}%</span><button class="btn sm ghost" data-go="${c.p.id}" data-kind="compat" data-extra="${c.pct}">더보기</button></div>`).join('') : '<div class="empty">다른 참석자가 들어오면 보여요</div>'}</div></div>
+    <div class="rank-list">${mine.length ? mine.slice(0, 5).map((c, i) => `<div class="item"><span class="no">${i + 1}</span>${avatar(c.p, 34)}<div class="who"><div class="name">${esc(c.p.display)}</div><div class="dim">${esc(compatPhrase(c.pct))}${c.p.hint ? ` · ${esc(c.p.hint)}` : ''}</div></div><span class="pct">${c.pct}%</span><button class="btn sm ghost" data-go="${c.p.id}" data-kind="compat" data-extra="${c.pct}">더보기</button></div>`).join('') : '<div class="empty">다른 참석자가 들어오면 보여요</div>'}</div></div>
   <div class="section"><div class="section-title"><h2>환상의 콤비 TOP 5</h2><span class="sub">전원 자동 집계</span></div>
     <div class="rank-list">${top.length ? top.map((c, i) => `<div class="item ${c.a.id === state.me.id || c.b.id === state.me.id ? 'me' : ''}"><span class="no">${i + 1}</span><div class="who"><div class="name">${esc(c.a.display)} ✕ ${esc(c.b.display)}</div><div class="dim">${esc(compatPhrase(c.pct))}</div></div><span class="pct">${c.pct}%</span></div>`).join('') : '<div class="empty">두 명 이상 등록되면 보여요</div>'}</div></div>`;
 }
@@ -973,22 +1023,30 @@ function openSettings() {
 // 지금 위치(찾는 힌트)만 빠르게 바꾸기
 function openHintEditor() {
   const me = state.me;
-  const m = openModal(`<h3>지금 위치나 옷 특징은?</h3><div class="muted" style="margin-bottom:10px">자리(바 근처, 2층 소파)나 옷(검은 옷, 안경). 20자 이내. 사람들이 이걸 보고 찾아와요.</div>
-    <input class="field" id="hintInput" maxlength="20" placeholder="예: 바 근처, 검은 옷" value="${esc(me.hint || '')}" autocomplete="off" enterkeyhint="done">
-    <div class="eyebrow dim" style="margin:10px 0 8px">눌러서 채우기</div>
-    <div class="chips">${HINT_EXAMPLES.map(x => `<span class="chip ${me.hint === x ? 'sel' : ''}" data-hx="${esc(x)}">${esc(x)}</span>`).join('')}</div>
-    <div class="row" style="margin-top:16px;flex-wrap:nowrap"><button class="btn ghost" id="hintCancel" style="flex:1">취소</button><button class="btn" id="hintSave" style="flex:2">저장</button></div>`);
-  const inp = $('#hintInput', m);
-  m.querySelectorAll('[data-hx]').forEach(c => c.onclick = () => { inp.value = c.dataset.hx; m.querySelectorAll('[data-hx]').forEach(x => x.classList.toggle('sel', x === c)); });
+  const chipsFor = (arr, cur, attr) => arr.map(x => { const t = x.replace(/^[^\p{L}\p{N}]+/u, '').trim(); return `<span class="chip ${cur === t ? 'sel' : ''}" ${attr}="${esc(t)}">${esc(x)}</span>`; }).join('');
+  const m = openModal(`<h3>위치·특징 바꾸기</h3><div class="muted" style="margin-bottom:12px">사람들이 이걸 보고 나를 찾아와요. 각각 20자 이내.</div>
+    <div class="eyebrow" style="margin-bottom:6px">📍 지금 위치</div>
+    <input class="field" id="placeInput" maxlength="20" placeholder="예: 바 근처" value="${esc(me.place || '')}" autocomplete="off">
+    <div class="chips" style="margin:8px 0 16px">${chipsFor(PLACE_EXAMPLES, me.place, 'data-px')}</div>
+    <div class="eyebrow" style="margin-bottom:6px">👕 특징</div>
+    <input class="field" id="lookInput" maxlength="20" placeholder="예: 검은 옷, 안경" value="${esc(me.look || '')}" autocomplete="off">
+    <div class="chips" style="margin-top:8px">${chipsFor(LOOK_EXAMPLES, me.look, 'data-lx')}</div>
+    <div class="field-err" id="hintErr" style="min-height:18px;margin-top:10px;font-size:13px;color:#FFB4A3;text-align:center"></div>
+    <div class="row" style="margin-top:6px;flex-wrap:nowrap"><button class="btn ghost" id="hintCancel" style="flex:1">취소</button><button class="btn" id="hintSave" style="flex:2">저장</button></div>`);
+  const pin = $('#placeInput', m), lin = $('#lookInput', m);
+  m.querySelectorAll('[data-px]').forEach(c => c.onclick = () => { pin.value = c.dataset.px; m.querySelectorAll('[data-px]').forEach(x => x.classList.toggle('sel', x === c)); });
+  m.querySelectorAll('[data-lx]').forEach(c => c.onclick = () => { lin.value = c.dataset.lx; m.querySelectorAll('[data-lx]').forEach(x => x.classList.toggle('sel', x === c)); });
   const save = async () => {
+    const hint = pin.value.trim().slice(0, 20), look = lin.value.trim().slice(0, 20);
+    if (!hint || !look) { $('#hintErr', m).textContent = !hint ? '지금 위치를 적어 주세요. 예시를 눌러도 돼요.' : '특징을 하나 적어 주세요. 예시를 눌러도 돼요.'; return; }
     const b = $('#hintSave', m); b.disabled = true;
-    const hint = inp.value.trim().slice(0, 20);
-    const { error } = await sb.from('mingle_profiles').update({ hint }).eq('id', me.id);
+    const { error } = await sb.from('mingle_profiles').update({ hint, look }).eq('id', me.id);
     if (error) { b.disabled = false; toast('저장하지 못했어요', error.message, { icon: '⚠️' }); return; }
-    me.hint = hint; closeModal(); toast('위치·특징을 바꿨어요', hint ? `지금: ${hint}` : '힌트를 비웠어요', { icon: '📍', ms: 2500 }); refresh(true);
+    me.place = hint; me.look = look; me.hint = whereText(hint, look);
+    closeModal(); toast('위치·특징을 바꿨어요', me.hint, { icon: '📍', ms: 2500 }); refresh(true);
   };
   $('#hintSave', m).onclick = save;
-  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } });
+  [pin, lin].forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } }));
   $('#hintCancel', m).onclick = closeModal;
 }
 function bindView() {
@@ -1114,7 +1172,7 @@ async function startScreenMode() {
   document.body.classList.add('screen');
   const root = $('#screenView'); root.classList.remove('hidden');
   const joinUrl = location.origin + location.pathname;
-  root.innerHTML = `<div class="sc-top"><img class="logo" src="logo.png" alt="MIXER SEOUL">
+  root.innerHTML = `<div class="sc-top"><img class="logo" src="logo.png?v=3" alt="MIXER SEOUL">
       <div class="join"><div class="txt"><div class="t1">지금 들어와서 등록하세요</div><div class="t2">${esc(joinUrl.replace(/^https?:\/\//, ''))}</div><div class="cnt"><span id="scCount">0</span>명 입장</div></div><div id="qr"></div></div></div>
     <div class="sc-body"><div class="sc-panel" id="scPanel"></div></div><div class="sc-progress" id="scProg"></div>`;
   try { new QRCode($('#qr'), { text: joinUrl, width: 130, height: 130, correctLevel: QRCode.CorrectLevel.M }); } catch (e) { }
@@ -1191,7 +1249,7 @@ async function startAdminMode(pw) {
         <div class="card"><div class="muted" style="margin-bottom:8px">아래를 복사해서 플레이리스트 작업에 쓰세요. "곡명 - 가수 (신청자)" 한 줄씩이에요.</div>
         <textarea class="field" id="songList" readonly style="min-height:160px;font-size:14px;line-height:1.5;resize:vertical">${esc(state.profiles.filter(p => p.song).map(p => `${p.song} (${p.display})`).join('\n'))}</textarea>
         <div class="row" style="margin-top:10px;flex-wrap:nowrap"><button class="btn block" id="copySongs">전체 복사</button></div></div></div>
-      <div class="section"><div class="section-title"><h2>프로필</h2></div>${state.profiles.map(p => `<div class="admin-row">${avatar(p, 32)}<div style="min-width:0"><b>${esc(p.display)}</b> <span class="muted">${(p.keywords || []).map(k => '#' + esc(k)).join(' ')}</span><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.intro)} / ${esc(p.topic)}${p.song ? ` / 🎵${esc(p.song)}` : ''} / 📍${esc(p.hint)}</div></div><button class="btn sm ghost x" data-delp="${p.id}">삭제</button></div>`).join('') || '<div class="empty">없음</div>'}</div>
+      <div class="section"><div class="section-title"><h2>프로필</h2></div>${state.profiles.map(p => `<div class="admin-row">${avatar(p, 32)}<div style="min-width:0"><b>${esc(p.display)}</b> <span class="muted">${(p.keywords || []).map(k => '#' + esc(k)).join(' ')}</span><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.intro)} / ${esc(p.topic)}${p.song ? ` / 🎵${esc(p.song)}` : ''} / ${esc(p.hint)}</div></div><button class="btn sm ghost x" data-delp="${p.id}">삭제</button></div>`).join('') || '<div class="empty">없음</div>'}</div>
       <div class="section"><div class="section-title"><h2>비밀번호 변경</h2></div><div class="row" style="gap:8px;flex-wrap:nowrap"><input class="field" id="newPw" placeholder="새 비밀번호 (4자 이상)" style="flex:1;min-width:0"><button class="btn sm ghost" id="setPw">변경</button></div></div>
       <div class="section"><div class="section-title"><h2>전체 데이터 초기화</h2></div><div class="card" style="border-color:#6B3A32"><div class="muted" style="margin-bottom:10px">프로필을 모두 지워요. 되돌릴 수 없어요.</div><button class="btn block" id="resetBtn" style="background:#B8513F;color:#fff">전체 초기화</button></div></div>`;
     const call = async (action, target) => { const { data } = await sb.rpc('mingle_admin', { pw, action, target: target == null ? null : String(target) }); if (!data?.ok) toast('실패', data?.error || '', { icon: '⚠️' }); };
