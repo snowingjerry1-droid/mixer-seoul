@@ -292,7 +292,7 @@ body.has-music .sc-progress{bottom:auto;top:0}
 /* ── 블랙 테마 · 각진 모서리 · 빛번짐 제거 (2026-10-18) ── */
 :root{
   --bg:#0A0908; --bg-2:#121110; --card:#171513; --card-2:#1D1A17; --line:#2A2622; --line-2:#3A342E;
-  --fg:#F4F1EC; --fg-2:#C8BFB4; --fg-3:#8C8379;
+  --fg:#F4F1EC; --fg-2:#C8BFB4; --fg-3:#9A9187;
   --brass:#ED752F; --brass-2:#F2853F; --brass-soft:rgba(237,117,47,.14); --glow:transparent;
   --peach:#C9A27A; --marble:#B08A63; --marble-2:#D9BC98; --marble-soft:rgba(201,162,122,.12);
   --radius:12px; --radius-sm:8px; --shadow:0 8px 24px rgba(0,0,0,.5); --shadow-sm:0 2px 8px rgba(0,0,0,.4);
@@ -318,7 +318,7 @@ body,#register,#waiting{background:var(--bg);background-image:none}
 #qr,.sc-pqr,.sc-mqr,.sc-mvid{border-radius:8px}
 .big-kw{border-radius:10px;box-shadow:none;background:var(--brass);color:#120A04}
 .title-tag{border-radius:8px;box-shadow:none}
-.chip.hit{background:var(--brass);color:#120A04;border-color:var(--brass);box-shadow:none;animation:none}
+.chip.hit{background:rgba(237,117,47,.12);color:#F2853F;border-color:var(--brass);box-shadow:none;animation:none}
 .chip.sel,.slot .d.stop,.pyr .prow:last-child .n,.quick-btn.on,.cloud .kw.mine,.dots i.on,.wait-pulse span,.sc-progress,.spark,.tab.active::after{box-shadow:none}
 .cloud .kw.mine{outline:2px solid var(--brass);outline-offset:2px}
 .brand .lamp,.reg-head .lamp{box-shadow:none;animation:none;background:var(--brass)}
@@ -333,6 +333,9 @@ body,#register,#waiting{background:var(--bg);background-image:none}
 .c4{background:#161412;color:#C8BFB4;border-color:#2E2A26!important}
 .banner{background:var(--card-2);border-color:var(--line-2);color:var(--fg-2)}
 .ms-card{background:var(--card)}
+/* 주황 바탕 위 글자는 진한 색 (흰 글자 대비 2.7 → 6.7) */
+.btn:not(.ghost):not(.marble),.chip.sel,.quick-btn.on,.slot .d.stop,.pyr .prow:last-child .n,.big-kw{color:#120A04}
+.btn.ghost{color:var(--fg)}
 </style>
 </head>
 <body>
@@ -377,7 +380,7 @@ const INTRO_EXAMPLES = ['요즘 빵에 푹 빠진 사람','주말엔 무조건 �
 const TOPIC_EXAMPLES = ['맛집 추천해 줄 분','요즘 뭐가 재밌는지 알려 줄 분','넷플릭스 뭐 볼지 알려 줄 분','여행지 추천해 줄 분','운동 같이 시작할 분','플레이리스트 공유해 줄 분','카페 추천해 줄 분','취준·진로 얘기 나눌 분','자취 꿀팁 알려 줄 분','같은 전공 얘기 할 분','덕질 얘기 나눌 분','요즘 읽을 책 추천해 줄 분','주말에 뭐 하는지 궁금해요','MBTI 얘기 해 볼 분'];
 const HINT_EXAMPLES = ['검은 옷','흰 셔츠','안경','모자','후드티','청자켓','1층 테이블','2층 소파','바 근처','입구 쪽','창가','계단 옆'];
 // 위치·특징 예시 칩 (이모지는 보기용, 누르면 글자만 채워짐)
-const PLACE_EXAMPLES = ['🍸 바 근처','🛋️ 소파 자리','💡 램프 테이블','🖥️ 스크린 앞','🏛️ 메인 홀','🪟 창가','🚪 입구 쪽','🪜 계단 옆'];
+const PLACE_EXAMPLES = ['🍸 바 근처','🛋️ 2층 소파 자리','🖥️ 스크린 앞','🚪 입구 쪽','🏢 1층'];
 const LOOK_EXAMPLES = ['🖤 검은 옷','🤍 흰 셔츠','👓 안경','🧢 모자','🧥 후드티','👖 청자켓','🧶 니트','🧥 코트','👜 가방','👟 운동화'];
 // 화면 표시용 위치·특징 한 줄
 function whereText(place, look) { return [place ? `📍 ${place}` : '', look ? `👕 ${look}` : ''].filter(Boolean).join(' · '); }
@@ -531,7 +534,7 @@ function nameScore(name) {
    3. 상태 & 유틸
    ========================================================= */
 const CIRCLED = ['', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩', '⑪', '⑫'];
-const AVATAR_COLORS = ['#ED752F', '#E3C49A', '#F1A68E', '#D9B8C0', '#F7EBDC', '#C9956A', '#F79350'];
+const AVATAR_COLORS = ['#ED752F', '#C9A27A', '#D9BC98', '#B08A63', '#E9E2D8', '#F2853F', '#A8957F'];
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -962,7 +965,7 @@ function openGo(id, kind = 'plain', extra = '') {
         <div class="pl"><div class="k">오늘 하고 싶은 얘기</div><div class="v">${esc(p.topic || '—')}</div></div>
         ${p.song ? `<div class="pl"><div class="k">오늘 밤 최애곡</div><div class="v">🎵 ${esc(p.song)}</div></div>` : ''}
       </div>
-      <div class="hint">${p.hint ? `<div class="k">찾는 힌트</div><div class="v">${esc(p.hint)}</div>` : `<div class="k">찾는 힌트</div><div class="v" style="font-size:18px;color:var(--fg-2)">아직 힌트가 없어요</div>`}</div>
+      <div class="hint">${p.hint ? `<div class="k">위치·특징</div><div class="v">${esc(p.hint)}</div>` : `<div class="k">위치·특징</div><div class="v" style="font-size:18px;color:var(--fg-2)">아직 힌트가 없어요</div>`}</div>
       <div class="eyebrow dim" style="margin:14px 0 8px;text-align:left">키워드${ov.length ? ` · 나와 ${ov.length}개 겹침` : ''}</div>
       ${kwChips(p, ov)}
       <div class="eyebrow dim" style="margin:18px 0 8px;text-align:left">이렇게 말 걸어 보세요</div>
