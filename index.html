@@ -347,6 +347,12 @@ body,#register,#waiting{background:var(--bg);background-image:none}
 /* 주황 바탕 위 글자는 진한 색 (흰 글자 대비 2.7 → 6.7) */
 .btn:not(.ghost):not(.marble),.chip.sel,.quick-btn.on,.slot .d.stop,.pyr .prow:last-child .n,.big-kw{color:#120A04}
 .btn.ghost{color:var(--fg)}
+.search-box{position:relative;margin-bottom:8px}
+.search-box .field{padding-left:40px;padding-right:40px}
+.search-box .search-ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;opacity:.7}
+.search-clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:8px;color:var(--fg-2);font-size:14px}
+.search-box input::-webkit-search-cancel-button{display:none}
+.rank-list .item[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -361,7 +367,6 @@ body,#register,#waiting{background:var(--bg);background-image:none}
   <main id="view"><div class="skel"><div class="sk big"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div></main>
   <nav class="tabs" id="tabs">
     <button class="tab active" data-tab="home"><span class="ic">🕯️</span>홈</button>
-    <button class="tab" data-tab="wall"><span class="ic">🧱</span>키워드 벽</button>
     <button class="tab" data-tab="compat"><span class="ic">🤝</span>이름 궁합</button>
     <button class="tab" data-tab="score"><span class="ic">🎰</span>이름 점수</button>
   </nav>
@@ -670,7 +675,6 @@ function startSync() {
 const regSteps = [
   { key: 'name', title: '이름을 알려 주세요', lead: '한글 실명으로요. 궁합과 이름 점수 계산에 써요.', ex: '동명이인은 자동으로 <b>김민지②</b>처럼 구분돼요', max: 20, placeholder: '예: 김민지' },
   { key: 'intro', title: '요즘 나는 어떤 사람?', lead: '어렵게 생각하지 마세요. 요즘 푹 빠진 것 하나면 충분해요.', ex: '아래 예시를 눌러 그대로 쓰거나 살짝 고쳐도 돼요', max: 30, placeholder: '예: 요즘 빵에 푹 빠진 사람', examples: INTRO_EXAMPLES },
-  { key: 'keywords', title: '나는 이런 사람', lead: '키워드 3개를 골라 주세요. 직접 써도 좋아요.', ex: '겹치는 키워드가 많을수록 말 걸 핑계가 늘어나요', max: 3 },
   { key: 'quick', title: '취향 밸런스 게임', lead: '고민 없이 톡톡. 같은 편이면 반갑고, 다른 편이면 할 말이 생겨요.', ex: '여섯 개 모두 골라야 다음으로 넘어가요' },
   { key: 'topic', title: '오늘 이런 얘기 하고 싶어요', lead: '듣고 싶은 추천이나 궁금한 것, 하나만 적어요.', ex: '내 카드에 TALK 로 보여서, 말 걸 거리가 돼요', max: 30, placeholder: '예: 맛집 추천해 줄 분', examples: TOPIC_EXAMPLES },
   { key: 'song', title: '오늘 밤 듣고 싶은 최애곡', lead: '모인 곡으로 플레이리스트를 만들어 유튜브에서 틀어요. 그래서 곡명과 가수 이름을 정확하게 적어 주세요.', ex: '<b>곡명 - 가수</b> 형태로. 예: <b>밤편지 - 아이유</b>, <b>Supernova - aespa</b>', max: 40, placeholder: '예: 밤편지 - 아이유' },
@@ -689,7 +693,7 @@ function showRegister(editing = false) {
 function renderRegister() {
   const root = $('#register');
   const s = regSteps[reg.step];
-  const groups = [['나', 0, 1], ['취향', 2, 3], ['오늘', 4, 5, 6, 7]];
+  const groups = [['나', 0, 1], ['취향', 2], ['오늘', 3, 4, 5, 6]];
   const g = groups.find(x => x.slice(1).includes(reg.step));
   const pct = Math.round(((reg.step + 1) / (regSteps.length + 1)) * 100);
   const left = regSteps.length - reg.step - 1;
@@ -771,10 +775,9 @@ function renderRegisterDone() {
   $('#register').innerHTML = `<div class="reg-wrap" style="justify-content:center;text-align:center">
     <div class="reg-card">
       <div class="eyebrow">등록 끝</div>
-      <h2 style="font-size:24px;margin:8px 0 16px">오늘 밤 당신의 키워드</h2>
-      <div class="big-kw">#${esc(kw)}</div>
-      <div class="nametag"><div class="nm">${esc(me.display)}</div><div class="kw">#${esc(kw)}</div></div>
-      <div class="next-do"><div class="eyebrow">다음 할 일</div><div>적어 둔 <b>${esc(me.hint)}</b>, 그대로 있어 주세요. 사람들이 그걸 보고 찾아와요. 자리를 옮기면 홈에서 바로 바꿀 수 있어요.</div></div>
+      <h2 style="font-size:24px;margin:8px 0 16px">등록이 끝났어요</h2>
+      <div class="nametag"><div class="nm">${esc(me.display)}</div><div class="kw">${esc(me.hint)}</div></div>
+      <div class="next-do"><div class="eyebrow">다음 할 일</div><div>위 위치·특징 그대로 있어 주세요. 사람들이 그걸 보고 찾아와요. 자리를 옮기면 홈에서 바로 바꿀 수 있어요.</div></div>
     </div>
     <div class="reg-card" id="scoreReveal" style="display:none">
       <div class="eyebrow">그리고, 내 이름 점수는</div>
@@ -810,7 +813,7 @@ function showWaiting() {
     <div class="reg-card">
       <div class="eyebrow">등록 완료</div>
       <h2 style="font-size:24px;margin:8px 0 14px">등록 완료, 조금만 기다려 주세요</h2>
-      <div class="nametag"><div class="nm">${esc(me.display)}</div><div class="kw">#${esc(me.keywords?.[0] || '')}</div></div>
+      <div class="nametag"><div class="nm">${esc(me.display)}</div><div class="kw">${esc(me.hint)}</div></div>
       <div class="muted">진행자가 문을 열면 이 화면이 <b style="color:var(--fg)">자동으로</b> 바뀌어요.<br>앱을 닫아도 괜찮아요.</div>
       <div class="wait-pulse"><span></span>지금까지 <b id="waitCount">${state.profiles.length}</b>명 입장</div>
       <button class="btn block ghost" id="waitEdit" style="margin-top:14px">📍 내 정보 · 위치·특징 바꾸기</button>
@@ -869,7 +872,9 @@ function renderHome() {
   const me = state.me;
   // 관심사 키워드(직접 고른 것) 겹침을 우선, 성향 답은 보조. 관심사 1개 이상 또는 성향 4개 이상 겹칠 때만 표시
   const matches = others().map(p => { const ov = overlap(me, p); const it = ov.filter(k => !QUICK_ALL.has(k)); const qk = ov.filter(k => QUICK_ALL.has(k)); return { p, ov: [...it, ...qk], it: it.length, qk: qk.length }; })
-    .filter(x => x.it >= 1 || x.qk >= 4).sort((a, b) => (b.it * 3 + b.qk) - (a.it * 3 + a.qk)).slice(0, MATCH_MAX);
+    .map(x => ({ ...x, song: !!(me.song && x.p.song && songNorm(me.song) === songNorm(x.p.song)) }))
+    .map(x => ({ ...x, score: x.it * 3 + x.qk + (x.song ? 3 : 0) }))
+    .filter(x => x.score >= 4).sort((a, b) => b.score - a.score).slice(0, MATCH_MAX);
   return `<div id="spotWrap">${spotlightHTML(spotlightPick())}</div>
     <div class="card tight me-card">${avatar(me)}<div style="flex:1;min-width:0"><div class="name" style="font-size:17px">${esc(me.display)} <span class="dim">나</span></div><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${me.hint ? esc(me.hint) : '📍 위치와 👕 특징을 적어 두면 찾아오기 쉬워요'}</div></div><button class="btn sm ghost" id="editMe">위치·특징 바꾸기</button></div>
     <div class="section"><div class="section-title"><h2>${matches.length ? `지금 말 걸 사람 <b style="color:var(--brass-2)">${matches.length}명</b>` : '아직 겹치는 사람이 없어요'}</h2><span class="sub">겹치는 순</span></div>
@@ -972,7 +977,10 @@ function renderScore() {
       <div class="slot" id="mySlot"></div><div id="myReasons"></div>
       <div class="muted" style="margin-top:12px">전체 ${ranked.length}명 중 ${myRank}등</div></div></div>
   <div class="section"><div class="section-title"><h2>이름 점수 전체 순위</h2><span class="sub">${ranked.length}명 · 운으로 정해지는 순위</span></div>
-    <div class="rank-list">${ranked.map((x, i) => `<div class="item ${x.p.id === state.me.id ? 'me' : ''}"><span class="no">${i + 1}</span>${avatar(x.p, 34)}<div class="who"><div class="name">${esc(x.p.display)}${x.p.id === state.me.id ? ' <span class="dim">나</span>' : ''}</div><div class="dim">${esc(x.s.title)}</div></div><span class="pct" style="margin-left:0">${x.s.score}</span>${x.p.id !== state.me.id ? `<button class="btn sm ghost" data-go="${x.p.id}" data-kind="score" data-extra="${i + 1}">더보기</button>` : ''}</div>`).join('')}</div></div>`;
+    <div class="search-box"><span class="search-ic">🔍</span><input class="field" id="scoreSearch" type="search" placeholder="이름으로 찾기" value="${esc(state.scoreQ || '')}" autocomplete="off" enterkeyhint="search"><button class="search-clear" id="scoreClear" aria-label="지우기" ${state.scoreQ ? '' : 'hidden'}>✕</button></div>
+    <div class="dim" id="scoreCount" style="margin:0 0 8px 2px"></div>
+    <div class="empty" id="scoreEmpty" hidden>‘<span id="scoreEmptyQ"></span>’ 이름을 찾지 못했어요. 성이나 이름 한 글자만 쳐 봐도 돼요.</div>
+    <div class="rank-list" id="scoreList">${ranked.map((x, i) => `<div class="item ${x.p.id === state.me.id ? 'me' : ''}"><span class="no">${i + 1}</span>${avatar(x.p, 34)}<div class="who"><div class="name">${esc(x.p.display)}${x.p.id === state.me.id ? ' <span class="dim">나</span>' : ''}</div><div class="dim">${esc(x.s.title)}</div></div><span class="pct" style="margin-left:0">${x.s.score}</span>${x.p.id !== state.me.id ? `<button class="btn sm ghost" data-go="${x.p.id}" data-kind="score" data-extra="${i + 1}">더보기</button>` : ''}</div>`).join('')}</div></div>`;
 }
 // 정보 더보기 카드: 상대가 쓴 문장 + 힌트 + 첫마디 제안
 function openGo(id, kind = 'plain', extra = '') {
@@ -981,7 +989,8 @@ function openGo(id, kind = 'plain', extra = '') {
   const ov = overlap(me, p);
   const openers = [];
   const kw = extra && kind === 'keyword' ? extra : ov[0];
-  if (kw) openers.push(OPENERS.keyword.replaceAll('{kw}', kw));
+  if (kw && !QUICK_ALL.has(kw)) openers.push(OPENERS.keyword.replaceAll('{kw}', kw));
+  else if (kw) openers.push(`저도 ${kw}예요! 반가워서 왔어요`);
   const myKw = (me.keywords || []).map(norm);
   if (p.topic && myKw.some(k => p.topic.includes(k))) openers.push(OPENERS.topic.replace('{topic}', p.topic));
   const pct = kind === 'compat' && extra ? extra : compat(me.name, p.name).pct;
@@ -1052,6 +1061,25 @@ function openHintEditor() {
   [pin, lin].forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } }));
   $('#hintCancel', m).onclick = closeModal;
 }
+// 이름 점수 전체 순위 검색: 이름에 입력한 글자가 들어간 줄만 남김
+function applyScoreSearch() {
+  const list = $('#scoreList'); if (!list) return;
+  const q = (state.scoreQ || '').replace(/\s+/g, '');
+  let shown = 0;
+  list.querySelectorAll('.item').forEach(it => { const n = (it.querySelector('.name')?.textContent || '').replace(/\s+/g, ''); const ok = !q || n.includes(q); it.hidden = !ok; if (ok) shown++; });
+  const c = $('#scoreCount'); if (c) c.textContent = q ? `${shown}명 찾았어요` : '';
+  const e = $('#scoreEmpty'); if (e) { e.hidden = !(q && !shown); $('#scoreEmptyQ').textContent = state.scoreQ || ''; }
+  const x = $('#scoreClear'); if (x) x.hidden = !q;
+}
+function bindScoreSearch() {
+  const inp = $('#scoreSearch'); if (!inp) return;
+  inp.addEventListener('input', () => { state.scoreQ = inp.value; applyScoreSearch(); });
+  inp.addEventListener('focus', () => { state.scoreFocus = true; });
+  inp.addEventListener('blur', () => { state.scoreFocus = false; });
+  $('#scoreClear').onclick = () => { state.scoreQ = ''; inp.value = ''; applyScoreSearch(); inp.focus(); };
+  applyScoreSearch();
+  if (state.scoreFocus) { inp.focus(); const L = inp.value.length; try { inp.setSelectionRange(L, L); } catch (e) { } }   // 새로고침으로 다시 그려져도 입력 유지
+}
 function bindView() {
   const v = $('#view');
   v.querySelectorAll('[data-go]').forEach(b => b.onclick = () => openGo(b.dataset.go, b.dataset.kind, b.dataset.extra));
@@ -1062,6 +1090,7 @@ function bindView() {
   const cs = $('#compatSearch'); if (cs) cs.addEventListener('input', () => { state.compatQ = cs.value.trim(); const pp = $('#peoplePick'); pp.innerHTML = others().filter(p => !state.compatQ || p.display.includes(state.compatQ)).map(p => `<span class="chip ${state.compatWith === p.id ? 'sel' : ''}" data-pick="${p.id}">${esc(p.display)}</span>`).join('') || '<span class="muted">없어요</span>'; bindPicks(); });
   bindPicks();
   const cr = $('#compatRun'); if (cr) cr.onclick = () => runCompatAnimation(byId(state.compatWith));
+  bindScoreSearch();
   const ms = $('#mySlot'); if (ms) { const ns = nameScore(state.me.name); runSlot(ms, ns.score, () => { const r2 = $('#myReasons'); if (r2) r2.innerHTML = reasonsHTML(ns); }); }
 }
 setInterval(() => { const w = $('#spotWrap'); if (w && state.tab === 'home' && state.me) { const t = $('#spotTxt'); if (t) t.style.opacity = 0; setTimeout(() => { w.innerHTML = spotlightHTML(spotlightPick()); bindView(); }, 400); } }, SPOTLIGHT_MS);
@@ -1207,7 +1236,7 @@ async function startScreenMode() {
   ];
   const gatePanel = () => `<div class="sc-gate"><div class="eyebrow" style="font-size:clamp(14px,2.2vh,20px)">등록 받는 중</div>
       <h2 style="margin:10px 0 6px">QR을 찍고 등록해 주세요</h2>
-      <div class="sc-gate-sub">이름 · 키워드 · 위치·특징까지 2분이면 끝나요</div>
+      <div class="sc-gate-sub">이름 · 취향 · 위치·특징까지 2분이면 끝나요</div>
       <div class="sc-gate-cnt"><b>${state.profiles.length}</b>명 등록 완료</div></div>`;
   const show = () => {
     clearInterval(spotTimer); clearTimeout(rotateTimer);
