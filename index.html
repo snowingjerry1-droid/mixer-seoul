@@ -677,7 +677,7 @@ const regSteps = [
   { key: 'intro', title: '요즘 나는 어떤 사람?', lead: '어렵게 생각하지 마세요. 요즘 푹 빠진 것 하나면 충분해요.', ex: '아래 예시를 눌러 그대로 쓰거나 살짝 고쳐도 돼요', max: 30, placeholder: '예: 요즘 빵에 푹 빠진 사람', examples: INTRO_EXAMPLES },
   { key: 'quick', title: '취향 밸런스 게임', lead: '고민 없이 톡톡. 같은 편이면 반갑고, 다른 편이면 할 말이 생겨요.', ex: '여섯 개 모두 골라야 다음으로 넘어가요' },
   { key: 'topic', title: '오늘 이런 얘기 하고 싶어요', lead: '듣고 싶은 추천이나 궁금한 것, 하나만 적어요.', ex: '내 카드에 TALK 로 보여서, 말 걸 거리가 돼요', max: 30, placeholder: '예: 맛집 추천해 줄 분', examples: TOPIC_EXAMPLES },
-  { key: 'song', title: '오늘 밤 듣고 싶은 최애곡', lead: '모인 곡으로 플레이리스트를 만들어 유튜브에서 틀어요. 그래서 곡명과 가수 이름을 정확하게 적어 주세요.', ex: '<b>곡명 - 가수</b> 형태로. 예: <b>밤편지 - 아이유</b>, <b>Supernova - aespa</b>', max: 40, placeholder: '예: 밤편지 - 아이유' },
+  { key: 'song', title: '오늘 밤 듣고 싶은 최애곡', lead: '내 프로필과 큰 화면에 함께 떠요. 같은 곡을 고른 사람이 있으면 서로 추천해 드려요.', ex: '<b>곡명 - 가수</b> 형태로. 예: <b>밤편지 - 아이유</b>, <b>Supernova - aespa</b>', max: 40, placeholder: '예: 밤편지 - 아이유' },
   { key: 'hint', title: '📍 지금 어디쯤 있어요?', lead: '지금 있는 자리를 적어 주세요. 자리를 옮기면 홈에서 바로 바꿀 수 있어요.', ex: '사람들이 이걸 보고 찾아와요', max: 20, placeholder: '예: 바 근처', examples: PLACE_EXAMPLES },
   { key: 'look', title: '👕 오늘 나를 알아볼 특징', lead: '옷 색이나 눈에 띄는 것 하나. 사람들이 이걸 보고 알아봐요.', ex: '예: 검은 옷, 안경', max: 20, placeholder: '예: 검은 옷, 안경', examples: LOOK_EXAMPLES },
 ];
@@ -1208,7 +1208,6 @@ async function startScreenMode() {
       <div class="join"><div class="txt"><div class="t1">지금 들어와서 등록하세요</div><div class="t2">${esc(joinUrl.replace(/^https?:\/\//, ''))}</div><div class="cnt"><span id="scCount">0</span>명 입장</div></div><div id="qr"></div></div></div>
     <div class="sc-body"><div class="sc-panel" id="scPanel"></div></div><div class="sc-progress" id="scProg"></div>`;
   try { new QRCode($('#qr'), { text: joinUrl, width: 130, height: 130, correctLevel: QRCode.CorrectLevel.M }); } catch (e) { }
-  setupMusic(root);
   // 순환: 스포트라이트(한 사람 5초 × 6명) → 이름 점수 TOP 10(5초) → 콤비 TOP 5(5초)
   let lastSpot = null, spotTimer = null, rotateTimer = null, idx = 0;
   const pickSpot = () => { const pool = state.profiles.filter(p => p.intro && p.id !== lastSpot); if (!pool.length) return null; const p = pickRandom(pool); lastSpot = p.id; return p; };
@@ -1248,9 +1247,9 @@ async function startScreenMode() {
     prog.style.transition = 'none'; prog.style.width = '0'; void prog.offsetWidth; prog.style.transition = `width ${pn.ms}ms linear`; prog.style.width = '100%';
     rotateTimer = setTimeout(show, pn.ms);
   };
-  await Promise.all([fetchProfiles(), fetchState(), fetchTracks()]); $('#scCount').textContent = state.profiles.length; show(); musicSync();
+  await Promise.all([fetchProfiles(), fetchState(), fetchTracks()]); $('#scCount').textContent = state.profiles.length; show();
   let wasOpen = state.open;
-  setInterval(async () => { await Promise.all([fetchProfiles(), fetchState(), fetchTracks()]); $('#scCount').textContent = state.profiles.length; musicSync();
+  setInterval(async () => { await Promise.all([fetchProfiles(), fetchState(), fetchTracks()]); $('#scCount').textContent = state.profiles.length;
     if (!state.open) { const b = $('.sc-gate-cnt b'); if (b) b.textContent = state.profiles.length; }
     if (state.open !== wasOpen) { wasOpen = state.open; idx = 0; show(); if (state.open) sparks(80); } }, POLL_MS);
   keepAwake();
@@ -1271,14 +1270,8 @@ async function startAdminMode(pw) {
       <div class="card" style="border-color:${state.open ? 'var(--brass)' : 'var(--line-2)'}"><div class="spread"><div><div class="eyebrow">${state.open ? '열림' : '닫힘'}</div><div style="font-weight:800;font-size:18px;margin-top:4px">${state.open ? '참가자 화면이 열려 있어요' : '지금은 등록만 받는 중'}</div><div class="muted">${state.open ? '모두가 홈·키워드 벽·궁합·이름점수를 보고 있어요' : '참가자는 등록 후 대기 화면만 봐요. 버튼을 누르면 모든 폰이 동시에 켜져요'}</div></div></div>
         <button class="btn block ${state.open ? 'ghost' : ''}" id="gateBtn" style="margin-top:12px">${state.open ? '참가자 화면 닫기' : '🎉 참가자 화면 열기'}</button></div>
       <a class="btn block marble" href="${location.pathname}?screen=1" target="_blank" rel="noopener" style="margin-bottom:6px;text-decoration:none">대형 화면 모드 열기 ↗</a><div class="dim" style="margin-bottom:8px">새 탭에서 열려요. 그 탭을 프로젝터·TV 화면으로 옮기고 전체 화면(⌃⌘F 또는 F11)으로 두세요.</div>
-      <div class="section"><div class="section-title"><h2>음악 (큰 화면에서 재생)</h2><span class="sub">${state.playlist ? '연결됨' : '아직 없음'}</span></div>
-        <div class="card"><div class="muted" style="margin-bottom:8px">유튜브 재생목록 주소를 붙여 넣고 저장하면 큰 화면이 그 목록을 틀고, 곡이 바뀔 때마다 신청자 위치·특징을 띄워요. 재생목록은 <b>공개</b> 또는 <b>일부 공개</b>여야 해요.</div>
-        <input class="field" id="plInput" placeholder="https://www.youtube.com/playlist?list=…" value="${esc(state.playlist || '')}" autocomplete="off">
-        <div class="row" style="margin-top:10px;flex-wrap:nowrap"><button class="btn" id="plSave" style="flex:2">저장</button><button class="btn ghost" id="plClear" style="flex:1">음악 끄기</button></div>
-        <div class="row" style="margin-top:10px;flex-wrap:nowrap"><button class="btn ghost" data-mc="prev" style="flex:1">⏮ 이전</button><button class="btn ghost" data-mc="toggle" style="flex:1">⏯ 재생/멈춤</button><button class="btn ghost" data-mc="next" style="flex:1">⏭ 다음</button></div>
-        <div class="dim" style="margin-top:8px">큰 화면 노트북에서는 ← → 키로 곡을 넘기고 스페이스로 멈출 수 있어요. 처음 한 번은 큰 화면의 '음악 시작' 버튼을 눌러 주세요.</div></div></div>
       <div class="section"><div class="section-title"><h2>최애곡 리스트</h2><span class="sub">${state.profiles.filter(p => p.song).length}곡</span></div>
-        <div class="card"><div class="muted" style="margin-bottom:8px">아래를 복사해서 플레이리스트 작업에 쓰세요. "곡명 - 가수 (신청자)" 한 줄씩이에요.</div>
+        <div class="card"><div class="muted" style="margin-bottom:8px">참가자들이 적은 최애곡이에요. "곡명 - 가수 (신청자)" 한 줄씩이에요.</div>
         <textarea class="field" id="songList" readonly style="min-height:160px;font-size:14px;line-height:1.5;resize:vertical">${esc(state.profiles.filter(p => p.song).map(p => `${p.song} (${p.display})`).join('\n'))}</textarea>
         <div class="row" style="margin-top:10px;flex-wrap:nowrap"><button class="btn block" id="copySongs">전체 복사</button></div></div></div>
       <div class="section"><div class="section-title"><h2>프로필</h2></div>${state.profiles.map(p => `<div class="admin-row">${avatar(p, 32)}<div style="min-width:0"><b>${esc(p.display)}</b> <span class="muted">${(p.keywords || []).map(k => '#' + esc(k)).join(' ')}</span><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.intro)} / ${esc(p.topic)}${p.song ? ` / 🎵${esc(p.song)}` : ''} / ${esc(p.hint)}</div></div><button class="btn sm ghost x" data-delp="${p.id}">삭제</button></div>`).join('') || '<div class="empty">없음</div>'}</div>
@@ -1286,9 +1279,6 @@ async function startAdminMode(pw) {
       <div class="section"><div class="section-title"><h2>전체 데이터 초기화</h2></div><div class="card" style="border-color:#6B3A32"><div class="muted" style="margin-bottom:10px">프로필을 모두 지워요. 되돌릴 수 없어요.</div><button class="btn block" id="resetBtn" style="background:#B8513F;color:#fff">전체 초기화</button></div></div>`;
     const call = async (action, target) => { const { data } = await sb.rpc('mingle_admin', { pw, action, target: target == null ? null : String(target) }); if (!data?.ok) toast('실패', data?.error || '', { icon: '⚠️' }); };
     root.querySelectorAll('[data-delp]').forEach(b => b.onclick = async () => { b.disabled = true; await call('delete_profile', b.dataset.delp); draw(); });
-    $('#plSave').onclick = async () => { const v = $('#plInput').value.trim(); if (v && !parseMusicSrc(v)) return toast('주소를 확인해 주세요', '유튜브 재생목록이나 영상 주소를 붙여 넣어 주세요', { icon: '⚠️' }); await call('set_playlist', v); toast(v ? '음악을 연결했어요' : '음악을 껐어요', v ? '큰 화면이 몇 초 안에 재생을 시작해요' : '', { icon: '🎵' }); draw(); };
-    $('#plClear').onclick = async () => { await call('set_playlist', ''); toast('음악을 껐어요', '', { icon: '🎵' }); draw(); };
-    root.querySelectorAll('[data-mc]').forEach(b => b.onclick = async () => { await call('cmd', b.dataset.mc); toast(b.dataset.mc === 'next' ? '다음 곡' : b.dataset.mc === 'prev' ? '이전 곡' : '재생/멈춤', '', { icon: '🎵', ms: 1200 }); });
     $('#copySongs').onclick = async () => { const ta = $('#songList'); try { await navigator.clipboard.writeText(ta.value); toast('복사했어요', `${ta.value.split('\n').filter(Boolean).length}곡`, { icon: '🎵' }); } catch (e) { ta.focus(); ta.select(); toast('길게 눌러 복사해 주세요', '', { icon: '🎵' }); } };
     $('#gateBtn').onclick = async () => { const b = $('#gateBtn'); b.disabled = true; await call(state.open ? 'close' : 'open'); toast(state.open ? '참가자 화면을 닫았어요' : '참가자 화면을 열었어요!', state.open ? '' : '모든 폰이 몇 초 안에 켜져요', { icon: state.open ? '🔒' : '🎉' }); draw(); };
     $('#setPw').onclick = async () => { const v = $('#newPw').value.trim(); if (v.length < 4) return toast('4자 이상', '', { icon: '✋' }); await call('set_pw', v); pw = v; history.replaceState(null, '', location.pathname + '?admin=' + encodeURIComponent(v)); toast('비밀번호를 바꿨어요', '주소도 새 비밀번호로 바뀌었어요', { icon: '🔑' }); };
