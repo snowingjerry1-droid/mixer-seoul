@@ -1179,7 +1179,10 @@ function openSettings() {
   const rows = [['name', '이름', me.display], ['intro', '이 얘기 나오면 말이 많아져요', me.intro], ['quick', '취향 밸런스 게임', quick], ['know', '이건 저한테 물어봐도 돼요', me.know], ['curious', '요즘 이게 궁금해요', me.curious], ['song', '오늘 밤 최애곡', me.song], ['look', '👕 오늘 나를 알아볼 특징', me.look]];
   const m = openModal(`<h3>내 정보</h3><div class="muted" style="margin:2px 0 12px">바꿀 항목만 눌러서 고치면 바로 저장돼요</div>
     <div class="edit-list">${rows.map(([k, label, v]) => `<button class="edit-row" data-edit="${regSteps.findIndex(x => x.key === k)}"><span class="el"><span class="ek">${label}</span><span class="ev">${v ? esc(v) : '<span class="dim">비어 있음</span>'}</span></span><span class="ea">›</span></button>`).join('')}</div>
-    <button class="btn block ghost" id="settingsClose" style="margin-top:14px">닫기</button>`);
+    <button class="btn block ghost" id="editAll" style="margin-top:12px">전체 수정하기</button>
+    <div class="dim" style="text-align:center;margin-top:6px">여러 개를 바꿀 때. 처음부터 순서대로 넘겨요</div>
+    <button class="btn block ghost" id="settingsClose" style="margin-top:12px;border:0">닫기</button>`);
+  $('#editAll', m).onclick = () => { closeModal(); showRegister(true); };
   m.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => { closeModal(); showRegister(true, +b.dataset.edit); });
   $('#settingsClose', m).onclick = closeModal;
 }
