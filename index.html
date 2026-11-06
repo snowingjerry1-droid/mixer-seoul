@@ -132,6 +132,14 @@ main#view{flex:1;padding:8px 18px calc(92px + env(safe-area-inset-bottom,0px));m
 .quick-btn{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line-2);background:var(--bg-2);color:var(--fg);font-weight:700;font-size:16px;transition:all .15s}
 .quick-btn.on{background:var(--brass);border-color:var(--brass);color:#FFF4E8;box-shadow:0 0 14px var(--glow)}
 .reg-actions{display:flex;gap:10px;margin-top:12px}
+.edit-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.edit-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:13px 14px;background:var(--bg-2);border:0;border-bottom:1px solid var(--line);color:var(--fg)}
+.edit-row:last-child{border-bottom:0}
+.edit-row:active{background:var(--card)}
+.edit-row .el{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.edit-row .ek{font-size:12px;color:var(--peach);font-weight:700;letter-spacing:.02em}
+.edit-row .ev{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.edit-row .ea{font-size:22px;color:var(--fg-3)}
 .reg-actions .btn{flex:1}
 .field-err{min-height:18px;margin-top:10px;font-size:13px;color:#FFB4A3;text-align:center}
 .big-kw{font-family:var(--font-display);font-size:40px;color:#FFF4E8;background:linear-gradient(135deg,#F79350,#ED752F);display:inline-block;padding:10px 28px;border-radius:999px;animation:bounceIn .6s cubic-bezier(.2,.9,.3,1.3) both;box-shadow:0 0 40px var(--glow)}
@@ -793,10 +801,12 @@ const regSteps = [
 let reg = { step: 0, data: { name: '', intro: '', keywords: [], quick: [], know: '', curious: '', shout: false, song: '', hint: '', look: '' }, editing: false };
 function splitKeywords(arr) { return { free: (arr || []).filter(k => !QUICK_ALL.has(k)), quick: QUICK_QUESTIONS.map(x => (arr || []).find(k => x.a.includes(k)) || '') }; }
 
-function showRegister(editing = false) {
+// only: 그 단계 하나만 고치고 바로 저장 (내 정보에서 항목을 눌렀을 때)
+function showRegister(editing = false, only = null) {
   const sp = editing ? splitKeywords(state.me.keywords) : { free: [], quick: QUICK_QUESTIONS.map(() => '') };
   const lp = lookParse(editing ? state.me.look : '');
   reg = { step: 0, editing, lookSel: lp.sel, lookExtra: lp.extra, data: editing ? { name: state.me.name, intro: state.me.intro, keywords: sp.free, quick: sp.quick, know: state.me.know || '', curious: state.me.curious || '', shout: !!state.me.shout, song: state.me.song || '', hint: state.me.place || '', look: state.me.look || '' } : { name: '', intro: '', keywords: [], quick: sp.quick, know: '', curious: '', shout: false, song: '', hint: '', look: '' } };
+  if (only != null) { reg.step = only; reg.only = true; }
   $('#register').classList.remove('hidden');
   renderRegister();
 }
@@ -827,14 +837,14 @@ function renderRegister() {
   }
   root.innerHTML = `<div class="reg-wrap">
     <div class="reg-head"><img class="logo" src="logo.png?v=3" alt="MIXER SEOUL"><div class="muted" style="margin-top:10px">${reg.editing ? '내 정보 수정' : '오늘 밤, 먼저 말 걸 핑계를 만들어 드릴게요'}</div></div>
-    ${dots}
+    ${reg.only ? '' : dots}
     <div class="reg-card" key="${reg.step}">
       
       <h2>${s.title}</h2><div class="lead">${s.lead}</div>
       ${body}
       ${s.examples ? '' : `<div class="ex">${s.ex}</div>`}
       <div class="field-err" id="regErr"></div>
-      <div class="reg-actions">${reg.step > 0 ? '<button class="btn ghost" id="regBack">이전</button>' : ''}<button class="btn" id="regNext">${reg.step === regSteps.length - 1 ? (reg.editing ? '저장하기' : '입장하기') : '다음'}</button></div>
+      <div class="reg-actions">${reg.only ? '<button class="btn ghost" id="regCancel">취소</button>' : reg.step > 0 ? '<button class="btn ghost" id="regBack">이전</button>' : ''}<button class="btn" id="regNext">${reg.only ? '저장' : reg.step === regSteps.length - 1 ? (reg.editing ? '저장하기' : '입장하기') : '다음'}</button></div>
       ${s.optional ? `<button class="btn block ghost" id="regSkip" style="margin-top:8px;border:0;color:var(--fg-2)">${s.skipText || '나중에 적을게요'}</button>` : ''}
     </div></div>`;
   const inp = $('#regInput');
@@ -851,7 +861,8 @@ function renderRegister() {
   root.querySelectorAll('[data-qi]').forEach(b => b.onclick = () => { reg.data.quick[+b.dataset.qi] = b.dataset.qa; root.querySelectorAll(`[data-qi="${b.dataset.qi}"]`).forEach(x => x.classList.toggle('on', x === b)); });
   if (s.key === 'look') bindLookPicker(root, reg.lookSel, () => { reg.lookExtra = $('#lookExtra').value; reg.data.look = lookCompose(reg.lookSel, reg.lookExtra); });
   const back = $('#regBack'); if (back) back.onclick = () => { reg.step--; renderRegister(); };
-  const skip = $('#regSkip'); if (skip) skip.onclick = () => { reg.data[s.key] = ''; if (reg.step < regSteps.length - 1) { reg.step++; renderRegister(); } else submitRegister(); };
+  const cancel = $('#regCancel'); if (cancel) cancel.onclick = () => { $('#register').classList.add('hidden'); openSettings(); };
+  const skip = $('#regSkip'); if (skip) skip.onclick = () => { reg.data[s.key] = ''; if (!reg.only && reg.step < regSteps.length - 1) { reg.step++; renderRegister(); } else submitRegister(); };
   $('#regNext').onclick = async () => {
     if (s.key === 'look') { reg.lookExtra = $('#lookExtra').value; reg.data.look = lookCompose(reg.lookSel, reg.lookExtra); }
     else if (s.key !== 'keywords' && s.key !== 'quick') reg.data[s.key] = ($('#regInput').value || '').trim();
@@ -861,7 +872,7 @@ function renderRegister() {
     else if (s.key === 'look') { { const m = lookMissing(reg.lookSel, reg.lookExtra); if (m) { err.textContent = m; return; } } }
     else if (s.key === 'quick') { const left = v.filter(x => !x).length; if (left) { err.textContent = `${left}개가 비었어요. 비어 있는 줄에서 하나를 눌러 주세요.`; return; } }
     else if (!s.optional && !v) { err.textContent = s.key === 'name' ? '이름을 적어 주세요. 예: 김민지' : '한 글자라도 적어 주세요. 아래 예시를 눌러도 돼요.'; $('#regInput')?.focus(); return; }
-    if (reg.step < regSteps.length - 1) { reg.step++; renderRegister(); return; }
+    if (!reg.only && reg.step < regSteps.length - 1) { reg.step++; renderRegister(); return; }
     await submitRegister();
   };
 }
@@ -1164,16 +1175,12 @@ function openGo(id, kind = 'plain', extra = '') {
 }
 function openSettings() {
   const me = state.me;
-  const m = openModal(`<h3>내 정보</h3>
-    <div class="card tight" style="margin-top:10px"><div class="row" style="flex-wrap:nowrap">${avatar(me)}<div style="min-width:0"><div class="name" style="font-size:17px">${esc(me.display)}</div>${profileLines(me)}</div></div>
-      <div class="hint-line"><span class="k">특징</span><span class="v">${me.hint ? esc(me.hint) : '<span class="dim">힌트 없음</span>'}</span></div></div>
-    <div class="stack" style="margin-top:12px">
-      <button class="btn block" id="editAll">수정하기</button>
-      <div class="dim" style="text-align:center">이름 · 좋아하는 것 · 취향 · 아는 것 · 궁금한 것 · 최애곡 · 특징</div>
-    </div>
-    <button class="btn block ghost" id="settingsClose" style="margin-top:16px">닫기</button>`);
-  $('#editAll', m).onclick = () => { closeModal(); showRegister(true); };
-
+  const quick = splitKeywords(me.keywords).quick.filter(Boolean).join(' · ');
+  const rows = [['name', '이름', me.display], ['intro', '이 얘기 나오면 말이 많아져요', me.intro], ['quick', '취향 밸런스 게임', quick], ['know', '이건 저한테 물어봐도 돼요', me.know], ['curious', '요즘 이게 궁금해요', me.curious], ['song', '오늘 밤 최애곡', me.song], ['look', '👕 오늘 나를 알아볼 특징', me.look]];
+  const m = openModal(`<h3>내 정보</h3><div class="muted" style="margin:2px 0 12px">바꿀 항목만 눌러서 고치면 바로 저장돼요</div>
+    <div class="edit-list">${rows.map(([k, label, v]) => `<button class="edit-row" data-edit="${regSteps.findIndex(x => x.key === k)}"><span class="el"><span class="ek">${label}</span><span class="ev">${v ? esc(v) : '<span class="dim">비어 있음</span>'}</span></span><span class="ea">›</span></button>`).join('')}</div>
+    <button class="btn block ghost" id="settingsClose" style="margin-top:14px">닫기</button>`);
+  m.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => { closeModal(); showRegister(true, +b.dataset.edit); });
   $('#settingsClose', m).onclick = closeModal;
 }
 // 지금 위치(찾는 힌트)만 빠르게 바꾸기
@@ -1222,7 +1229,7 @@ function bindScoreSearch() {
 function bindView() {
   const v = $('#view');
   v.querySelectorAll('[data-go]').forEach(b => b.onclick = () => openGo(b.dataset.go, b.dataset.kind, b.dataset.extra));
-  const edit = $('#editMe'); if (edit) edit.onclick = () => showRegister(true);
+  const edit = $('#editMe'); if (edit) edit.onclick = openSettings;
   v.querySelectorAll('[data-wall]').forEach(k => k.onclick = () => { state.wallKw = k.dataset.wall; render(); setTimeout(() => { const s = v.querySelectorAll('.section')[1]; s && s.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50); });
   const wc = $('#wallClear'); if (wc) wc.onclick = () => { state.wallKw = null; render(); };
   const bindPicks = () => v.querySelectorAll('[data-pick]').forEach(c => c.onclick = () => { state.compatWith = c.dataset.pick; state.busy = false; render(); setTimeout(() => $('#compatStage')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); });
