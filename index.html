@@ -931,7 +931,7 @@ function showWaiting() {
       <div class="nametag"><div class="nm">${esc(me.display)}</div><div class="kw">${esc(me.hint)}</div></div>
       <div class="muted">진행자가 문을 열면 이 화면이 <b style="color:var(--fg)">자동으로</b> 바뀌어요.<br>앱을 닫아도 괜찮아요.</div>
       <div class="wait-pulse"><span></span>지금까지 <b id="waitCount">${state.profiles.length}</b>명 입장</div>
-      <button class="btn block ghost" id="waitEdit" style="margin-top:14px">👕 내 정보 · 특징 바꾸기</button>
+      <button class="btn block ghost" id="waitEdit" style="margin-top:14px">✎ 내 정보 수정하기</button>
     </div></div>`;
   $('#waitEdit').onclick = openSettings;
 }
@@ -995,7 +995,7 @@ function renderHome() {
     .map(x => ({ ...x, score: x.it * 3 + x.qk + (x.song ? 3 : 0) }))
     .filter(x => x.score >= 4).sort((a, b) => b.score - a.score).slice(0, MATCH_MAX);
   return `<div id="spotWrap">${spotlightHTML(spotlightPick())}</div>
-    <div class="card tight me-card">${avatar(me)}<div style="flex:1;min-width:0"><div class="name" style="font-size:17px">${esc(me.display)} <span class="dim">나</span></div><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${me.hint ? esc(me.hint) : '👕 오늘 입은 옷을 적어 두면 찾아오기 쉬워요'}</div></div><button class="btn sm ghost" id="editMe">특징 바꾸기</button></div>
+    <div class="card tight me-card">${avatar(me)}<div style="flex:1;min-width:0"><div class="name" style="font-size:17px">${esc(me.display)} <span class="dim">나</span></div><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${me.hint ? esc(me.hint) : '👕 오늘 입은 옷을 적어 두면 찾아오기 쉬워요'}</div></div><button class="btn sm ghost" id="editMe">수정하기</button></div>
     <div class="section"><div class="section-title"><h2>${matches.length ? `지금 말 걸 사람 <b style="color:var(--brass-2)">${matches.length}명</b>` : '아직 겹치는 사람이 없어요'}</h2><span class="sub">겹치는 순</span></div>
       ${matches.length ? matches.map(({ p, ov }) => personCard(p, { highlight: ov, line: `<b>#${esc(ov[0])}</b>${ov.length > 1 ? ` 외 ${ov.length - 1}개` : ''} 겹쳐요`, go: 'keyword', extra: ov[0] })).join('') : `<div class="empty">아직 키워드가 겹치는 사람이 없어요.<br>키워드 벽에서 비슷한 사람을 찾아보세요.</div>`}
     </div>
@@ -1168,13 +1168,10 @@ function openSettings() {
     <div class="card tight" style="margin-top:10px"><div class="row" style="flex-wrap:nowrap">${avatar(me)}<div style="min-width:0"><div class="name" style="font-size:17px">${esc(me.display)}</div>${profileLines(me)}</div></div>
       <div class="hint-line"><span class="k">특징</span><span class="v">${me.hint ? esc(me.hint) : '<span class="dim">힌트 없음</span>'}</span></div></div>
     <div class="stack" style="margin-top:12px">
-      <button class="btn block" id="editHint">👕 특징만 바꾸기</button>
-      <div class="dim" style="text-align:center">겉옷을 벗었을 때. 10초면 끝나요</div>
-      <button class="btn block ghost" id="editAll">전체 수정하기</button>
+      <button class="btn block" id="editAll">수정하기</button>
       <div class="dim" style="text-align:center">이름 · 좋아하는 것 · 취향 · 아는 것 · 궁금한 것 · 최애곡 · 특징</div>
     </div>
     <button class="btn block ghost" id="settingsClose" style="margin-top:16px">닫기</button>`);
-  $('#editHint', m).onclick = () => { closeModal(); openHintEditor(); };
   $('#editAll', m).onclick = () => { closeModal(); showRegister(true); };
 
   $('#settingsClose', m).onclick = closeModal;
@@ -1225,7 +1222,7 @@ function bindScoreSearch() {
 function bindView() {
   const v = $('#view');
   v.querySelectorAll('[data-go]').forEach(b => b.onclick = () => openGo(b.dataset.go, b.dataset.kind, b.dataset.extra));
-  const edit = $('#editMe'); if (edit) edit.onclick = openHintEditor;
+  const edit = $('#editMe'); if (edit) edit.onclick = () => showRegister(true);
   v.querySelectorAll('[data-wall]').forEach(k => k.onclick = () => { state.wallKw = k.dataset.wall; render(); setTimeout(() => { const s = v.querySelectorAll('.section')[1]; s && s.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50); });
   const wc = $('#wallClear'); if (wc) wc.onclick = () => { state.wallKw = null; render(); };
   const bindPicks = () => v.querySelectorAll('[data-pick]').forEach(c => c.onclick = () => { state.compatWith = c.dataset.pick; state.busy = false; render(); setTimeout(() => $('#compatStage')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); });
