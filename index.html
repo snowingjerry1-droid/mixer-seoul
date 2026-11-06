@@ -399,7 +399,6 @@ body,#register,#waiting{background:var(--bg);background-image:none}
   <main id="view"><div class="skel"><div class="sk big"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div></main>
   <nav class="tabs" id="tabs">
     <button class="tab active" data-tab="home"><span class="ic">🕯️</span>홈</button>
-    <button class="tab" data-tab="ask"><span class="ic">🙋</span>물어보세요</button>
     <button class="tab" data-tab="compat"><span class="ic">🤝</span>이름 궁합</button>
     <button class="tab" data-tab="score"><span class="ic">🎰</span>이름 점수</button>
   </nav>
@@ -780,8 +779,8 @@ const regSteps = [
   { key: 'name', title: '이름을 알려 주세요', lead: '한글 실명으로요. 궁합과 이름 점수 계산에 써요.', ex: '동명이인은 자동으로 <b>김민지②</b>처럼 구분돼요', max: 20, placeholder: '예: 김민지' },
   { key: 'intro', title: '이 얘기 나오면 말이 많아져요', lead: '좋아하는 거 하나면 돼요. 단어 하나도 충분해요.', ex: '누가 이걸로 말 걸어오면 반가운 걸로요', max: 15, placeholder: '예: 한강 러닝', examples: LIKE_EXAMPLES },
   { key: 'quick', title: '취향 밸런스 게임', lead: '고민 없이 톡톡. 같은 편이면 반갑고, 다른 편이면 할 말이 생겨요.', ex: '여섯 개 모두 골라야 다음으로 넘어가요' },
-  { key: 'know', title: '이건 저한테 물어봐도 돼요', lead: '해 봤거나 자주 하는 거면 충분해요. 잘 알 필요 없어요.', ex: '‘이건 ○○님한테 물어보세요’ 목록에 올라가요. 말 걸어도 된다는 표시예요', max: 15, placeholder: '예: 성수 맛집', examples: KNOW_EXAMPLES, optional: true, skipText: '딱히 없어요, 넘어갈게요' },
-  { key: 'curious', title: '요즘 이게 궁금해요', lead: '아는 사람이 보면 먼저 말 걸 수 있어요.', ex: '물어보세요 탭과 큰 화면에 “이거 아는 분 찾아요”로 떠요', max: 15, placeholder: '예: 와인 고르는 법', examples: CURIOUS_EXAMPLES, optional: true, skipText: '딱히 없어요, 넘어갈게요' },
+  { key: 'know', title: '이건 저한테 물어봐도 돼요', lead: '해 봤거나 자주 하는 거면 충분해요. 잘 알 필요 없어요.', ex: '내 카드와 큰 화면에 떠요. 이걸로 말 걸어도 된다는 표시예요', max: 15, placeholder: '예: 성수 맛집', examples: KNOW_EXAMPLES, optional: true, skipText: '딱히 없어요, 넘어갈게요' },
+  { key: 'curious', title: '요즘 이게 궁금해요', lead: '아는 사람이 보면 먼저 말 걸 수 있어요.', ex: '큰 화면에 “이거 아는 분 찾아요”로 떠요', max: 15, placeholder: '예: 와인 고르는 법', examples: CURIOUS_EXAMPLES, optional: true, skipText: '딱히 없어요, 넘어갈게요' },
   { key: 'song', title: '오늘 밤 듣고 싶은 최애곡', lead: '내 프로필과 큰 화면에 함께 떠요. 같은 곡을 고른 사람이 있으면 서로 추천해 드려요.', ex: '<b>곡명 - 가수</b> 형태로. 예: <b>밤편지 - 아이유</b>, <b>Supernova - aespa</b>', max: 40, placeholder: '예: 밤편지 - 아이유' },
   { key: 'look', title: '👕 오늘 나를 알아볼 특징', lead: '세 줄에서 하나씩 톡톡. 70명 중에서 나를 찾을 수 있게요.', ex: '큰 화면에는 이름 대신 이 특징이 떠요' },
 ];
@@ -1369,10 +1368,10 @@ async function startScreenMode() {
       after: () => { let n = 1; spotTimer = setInterval(() => { const el = $('#scSpotBody'); if (!el) return; n++; if (n > SCREEN_SPOT_PEOPLE) return; const p = pickSpot(); el.innerHTML = personHTML(p, n); personQr(p); }, SCREEN_SPOT_MS); } },
     { ms: SCREEN_RANK_MS * 2, skip: () => !state.profiles.some(p => p.curious), render: () => {
       const sh = state.profiles.filter(p => p.curious).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 8);
-      return `<h2>📣 이거 아는 분 찾아요</h2><div class="sc-note">누군지는 폰의 🙋 물어보세요 탭에서 볼 수 있어요</div><div class="sc-rank" style="grid-template-columns:1fr">${sh.map(p => `<div class="it"><span class="no">🙋</span><div><div>${esc(p.curious)}</div><div class="sub">${p.hint ? esc(p.hint) : '특징 미입력'} 님이 궁금해해요</div></div></div>`).join('')}</div>`; } },
+      return `<h2>📣 이거 아는 분 찾아요</h2><div class="sc-note">특징을 보고 찾아가 보세요</div><div class="sc-rank" style="grid-template-columns:1fr">${sh.map(p => `<div class="it"><span class="no">🙋</span><div><div>${esc(p.curious)}</div><div class="sub">${p.hint ? esc(p.hint) : '특징 미입력'} 님이 궁금해해요</div></div></div>`).join('')}</div>`; } },
     { ms: SCREEN_RANK_MS * 2, render: () => {
       const ks = state.profiles.filter(p => p.know); for (let i = ks.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ks[i], ks[j]] = [ks[j], ks[i]]; }
-      return `<h2>🙋 이건 이 사람한테 물어보세요</h2><div class="sc-note">누군지는 폰의 🙋 물어보세요 탭에서 볼 수 있어요</div><div class="sc-rank">${ks.slice(0, 10).map(p => `<div class="it"><div><div>${esc(p.know)}</div><div class="sub">${p.hint ? esc(p.hint) : '특징 미입력'}</div></div></div>`).join('') || '<div style="font-size:36px;color:var(--fg-2)">아직 적은 사람이 없어요</div>'}</div>`; } },
+      return `<h2>🙋 이건 이 사람한테 물어보세요</h2><div class="sc-note">특징을 보고 찾아가 보세요</div><div class="sc-rank">${ks.slice(0, 10).map(p => `<div class="it"><div><div>${esc(p.know)}</div><div class="sub">${p.hint ? esc(p.hint) : '특징 미입력'}</div></div></div>`).join('') || '<div style="font-size:36px;color:var(--fg-2)">아직 적은 사람이 없어요</div>'}</div>`; } },
     { ms: SCREEN_RANK_MS, render: () => {
       const ranked = scoreRanking().slice(0, 10);
       return `<h2>이름 점수 TOP 10</h2><div class="sc-rank">${ranked.map((x, i) => `<div class="it"><span class="no">${i + 1}</span><div><div>${esc(x.p.display)}</div><div class="sub">${esc(x.s.title)}</div></div><span class="sc">${x.s.score}</span></div>`).join('') || '<div style="font-size:36px;color:var(--fg-2)">아직 등록한 사람이 없어요</div>'}</div>`; } },
@@ -1417,7 +1416,7 @@ async function startAdminMode(pw) {
   const draw = async () => {
     await Promise.all([fetchProfiles(), fetchState()]);
     root.innerHTML = `<div class="brand" style="margin-bottom:4px"><span class="lamp"></span><div><div class="nm">MIXER</div><div class="en">SEOUL · HOST</div></div></div><div class="muted" style="margin:10px 0 12px">입장 ${state.profiles.length}명</div>
-      <div class="card" style="border-color:${state.open ? 'var(--brass)' : 'var(--line-2)'}"><div class="spread"><div><div class="eyebrow">${state.open ? '열림' : '닫힘'}</div><div style="font-weight:800;font-size:18px;margin-top:4px">${state.open ? '참가자 화면이 열려 있어요' : '지금은 등록만 받는 중'}</div><div class="muted">${state.open ? '모두가 홈·물어보세요·궁합·이름점수를 보고 있어요' : '참가자는 등록 후 대기 화면만 봐요. 버튼을 누르면 모든 폰이 동시에 켜져요'}</div></div></div>
+      <div class="card" style="border-color:${state.open ? 'var(--brass)' : 'var(--line-2)'}"><div class="spread"><div><div class="eyebrow">${state.open ? '열림' : '닫힘'}</div><div style="font-weight:800;font-size:18px;margin-top:4px">${state.open ? '참가자 화면이 열려 있어요' : '지금은 등록만 받는 중'}</div><div class="muted">${state.open ? '모두가 홈·궁합·이름점수를 보고 있어요' : '참가자는 등록 후 대기 화면만 봐요. 버튼을 누르면 모든 폰이 동시에 켜져요'}</div></div></div>
         <button class="btn block ${state.open ? 'ghost' : ''}" id="gateBtn" style="margin-top:12px">${state.open ? '참가자 화면 닫기' : '🎉 참가자 화면 열기'}</button></div>
       <a class="btn block marble" href="${location.pathname}?screen=1" target="_blank" rel="noopener" style="margin-bottom:6px;text-decoration:none">대형 화면 모드 열기 ↗</a><div class="dim" style="margin-bottom:8px">새 탭에서 열려요. 그 탭을 프로젝터·TV 화면으로 옮기고 전체 화면(⌃⌘F 또는 F11)으로 두세요.</div>
       <div class="section"><div class="section-title"><h2>최애곡 리스트</h2><span class="sub">${state.profiles.filter(p => p.song).length}곡</span></div>
