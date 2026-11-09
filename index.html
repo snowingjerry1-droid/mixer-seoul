@@ -275,8 +275,9 @@ body.screen{overflow:hidden}
 #qr{background:#fff;padding:10px;border-radius:12px;width:clamp(100px,16vh,150px);height:clamp(100px,16vh,150px)}
 #qr img,#qr canvas{width:100%!important;height:100%!important}
 .sc-body{display:grid;place-items:center;overflow:hidden}
+.sc-top .join .txt,.sc-top .join .txt *{font-family:var(--font-body);font-weight:700;letter-spacing:-.01em}
 .sc-panel{width:100%;max-width:1500px;animation:pop .6s ease both}
-.sc-panel h2{font-size:clamp(28px,5.2vh,50px);text-align:center;margin-bottom:clamp(10px,2vh,22px);color:var(--brass-2);text-shadow:0 0 30px var(--glow)}
+.sc-panel h2{font-family:var(--font-body);font-weight:800;letter-spacing:-.02em;word-break:keep-all;font-size:clamp(28px,5.2vh,50px);text-align:center;margin-bottom:clamp(10px,2vh,22px);color:var(--brass-2);text-shadow:0 0 30px var(--glow)}
 .sc-cloud{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:22px 18px}
 .sc-cloud .kw{animation:floaty var(--d,4s) ease-in-out infinite;animation-delay:var(--dl,0s);border-radius:999px;padding:.3em .75em;font-weight:700;line-height:1.1;border:1px solid transparent}
 .sc-rank{display:grid;grid-template-columns:1fr 1fr;gap:clamp(6px,1.2vh,14px) 32px;font-size:clamp(16px,3vh,30px)}
@@ -315,10 +316,10 @@ body.sc-gating .sc-top #qr{visibility:hidden}
 .sc-pcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:clamp(12px,2vw,28px);width:100%;margin-top:clamp(6px,1.4vh,14px)}
 .sc-pc{border-left:4px solid var(--brass);background:rgba(255,255,255,.03);padding:clamp(12px,2vh,22px) clamp(14px,1.6vw,26px)}
 .sc-pc .k{font-size:clamp(14px,2.1vh,21px);color:var(--peach);font-weight:700;letter-spacing:.02em}
-.sc-pc .v{font-family:var(--font-display);font-size:clamp(26px,5vh,50px);line-height:1.25;color:var(--fg);margin-top:6px;word-break:keep-all}
-.sc-pfoot{font-size:clamp(18px,3vh,30px);color:var(--fg-2);margin-top:clamp(2px,.6vh,6px)}
+.sc-pc .v{font-family:var(--font-body);font-weight:700;font-size:clamp(24px,4.4vh,46px);line-height:1.3;letter-spacing:-.02em;color:var(--fg);margin-top:6px;word-break:keep-all}
+.sc-pfoot{font-weight:600;word-break:keep-all;font-size:clamp(18px,3vh,30px);color:var(--fg-2);margin-top:clamp(2px,.6vh,6px)}
 .sc-pfoot .dot{margin:0 .6em;color:var(--fg-3)}
-.sc-pintro{font-family:var(--font-display);font-size:clamp(44px,10vh,104px);line-height:1.3;color:var(--fg);text-wrap:balance}
+.sc-pintro{font-family:var(--font-body);font-weight:800;font-size:clamp(40px,8.6vh,92px);line-height:1.25;letter-spacing:-.025em;color:var(--fg);text-wrap:balance;word-break:keep-all}
 .sc-pmeta{font-size:clamp(16px,2.6vh,26px);color:var(--fg-2);line-height:1.6}
 .sc-pmeta .sep{color:var(--fg-3)}
 .sc-pkw{display:flex;gap:10px;flex-wrap:wrap;font-size:clamp(14px,2.2vh,22px)}
@@ -439,7 +440,7 @@ const POLL_MS = 4000;          // 새로고침 간격
 const SPOTLIGHT_MS = 30000;    // 스포트라이트 교체 간격
 const SCREEN_RANK_MS = 5000;   // 큰 화면: 랭킹 패널(이름 점수·콤비) 표시 시간
 const MUSIC_SHOW_NAME = false;  // 큰 화면 '지금 나오는 곡' 띠에 신청자 이름까지 보여 줄지 (false면 특징만)
-const SCREEN_SPOT_MS = 12000;  // 큰 화면: 스포트라이트 한 사람 표시 시간
+const SCREEN_SPOT_MS = 10000;  // 큰 화면: 스포트라이트 한 사람 표시 시간
 const SCREEN_SPOT_PEOPLE = 5;  // 큰 화면: 스포트라이트 한 차례에 보여 줄 인원
 
 // 등록 질문 예시 칩 (탭하면 입력칸에 채워지고, 고쳐 쓸 수 있음)
@@ -812,7 +813,7 @@ const regSteps = [
   { key: 'intro', title: '이 얘기 나오면 말이 많아져요', lead: '좋아하는 거 하나면 돼요. 단어 하나도 충분해요.', ex: '누가 이걸로 말 걸어오면 반가운 걸로요', max: 15, placeholder: '예: 한강 러닝', examples: LIKE_EXAMPLES },
   { key: 'quick', title: '취향 밸런스 게임', lead: '고민 없이 톡톡. 같은 편이면 반갑고, 다른 편이면 할 말이 생겨요.', ex: '여섯 개 모두 골라야 다음으로 넘어가요' },
   { key: 'know', title: '이건 저한테 물어봐도 돼요', lead: '해 봤거나 자주 하는 거면 충분해요. 잘 알 필요 없어요.', ex: '내 카드와 큰 화면에 떠요. 이걸로 말 걸어도 된다는 표시예요', max: 15, placeholder: '예: 성수 맛집', examples: KNOW_EXAMPLES, optional: true, skipText: '딱히 없어요, 넘어갈게요' },
-  { key: 'curious', title: '요즘 이게 궁금해요', lead: '아는 사람이 보면 먼저 말 걸 수 있어요.', ex: '큰 화면에 “이거 아는 분 찾아요”로 떠요', max: 15, placeholder: '예: 와인 고르는 법', examples: CURIOUS_EXAMPLES, optional: true, skipText: '딱히 없어요, 넘어갈게요' },
+  { key: 'curious', title: '요즘 이게 궁금해요', lead: '아는 사람이 보면 먼저 말 걸 수 있어요.', ex: '큰 화면 소개에 ‘요즘 이게 궁금해요’로 함께 떠요', max: 15, placeholder: '예: 와인 고르는 법', examples: CURIOUS_EXAMPLES, optional: true, skipText: '딱히 없어요, 넘어갈게요' },
   { key: 'song', title: '오늘 밤 듣고 싶은 최애곡', lead: '내 프로필과 큰 화면에 함께 떠요. 같은 곡을 고른 사람이 있으면 서로 추천해 드려요.', ex: '<b>곡명 - 가수</b> 형태로. 예: <b>밤편지 - 아이유</b>, <b>Supernova - aespa</b>', max: 40, placeholder: '예: 밤편지 - 아이유' },
   { key: 'look', title: '👕 오늘 나를 알아볼 특징', lead: '줄마다 하나씩 톡톡. 맞는 게 없으면 ‘없음’ 누르고 아래에 적어 주세요.' },
 ];
@@ -1449,12 +1450,6 @@ async function startScreenMode() {
   const panels = [
     { ms: SCREEN_SPOT_MS * SCREEN_SPOT_PEOPLE, render: () => { const p = pickSpot(); setTimeout(() => personQr(p), 0); return `<h2>오늘 밤, 이런 사람들이 와 있어요</h2><div class="sc-spot" id="scSpotBody">${personHTML(p, 1)}</div>`; },
       after: () => { let n = 1; spotTimer = setInterval(() => { const el = $('#scSpotBody'); if (!el) return; n++; if (n > SCREEN_SPOT_PEOPLE) return; const p = pickSpot(); el.innerHTML = personHTML(p, n); personQr(p); }, SCREEN_SPOT_MS); } },
-    { ms: SCREEN_RANK_MS * 2, skip: () => !state.profiles.some(p => p.curious), render: () => {
-      const sh = state.profiles.filter(p => p.curious).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 8);
-      return `<h2>📣 이거 아는 분 찾아요</h2><div class="sc-note">특징을 보고 찾아가 보세요</div><div class="sc-rank" style="grid-template-columns:1fr">${sh.map(p => `<div class="it"><span class="no">🙋</span><div><div>${esc(p.curious)}</div><div class="sub">${p.hint ? esc(p.hint) : '특징 미입력'} 님이 궁금해해요</div></div></div>`).join('')}</div>`; } },
-    { ms: SCREEN_RANK_MS * 2, render: () => {
-      const ks = state.profiles.filter(p => p.know); for (let i = ks.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ks[i], ks[j]] = [ks[j], ks[i]]; }
-      return `<h2>🙋 이건 이 사람한테 물어보세요</h2><div class="sc-note">특징을 보고 찾아가 보세요</div><div class="sc-rank">${ks.slice(0, 10).map(p => `<div class="it"><div><div>${esc(p.know)}</div><div class="sub">${p.hint ? esc(p.hint) : '특징 미입력'}</div></div></div>`).join('') || '<div style="font-size:36px;color:var(--fg-2)">아직 적은 사람이 없어요</div>'}</div>`; } },
     { ms: SCREEN_RANK_MS, render: () => {
       const ranked = scoreRanking().slice(0, 10);
       return `<h2>이름 점수 TOP 10</h2><div class="sc-rank">${ranked.map((x, i) => `<div class="it"><span class="no">${i + 1}</span><div><div>${esc(x.p.display)}</div><div class="sub">${esc(x.s.title)}</div></div><span class="sc">${x.s.score}</span></div>`).join('') || '<div style="font-size:36px;color:var(--fg-2)">아직 등록한 사람이 없어요</div>'}</div>`; } },
