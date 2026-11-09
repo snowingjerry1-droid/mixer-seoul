@@ -325,7 +325,7 @@ body.sc-gating .sc-top #qr{visibility:hidden}
 .sc-pmeta .sep{color:var(--fg-3)}
 .sc-pkw{display:flex;gap:10px;flex-wrap:wrap;font-size:clamp(14px,2.2vh,22px)}
 .sc-pkw span{border:1px solid var(--line-2);border-radius:999px;padding:4px 14px;color:var(--peach)}
-.sc-pcount{position:fixed;right:44px;bottom:18px;font-size:clamp(12px,1.8vh,18px);color:var(--fg-3);letter-spacing:.1em}
+.sc-pcount{display:none;position:fixed;right:44px;bottom:18px;font-size:clamp(12px,1.8vh,18px);color:var(--fg-3);letter-spacing:.1em}
 .sc-music{position:fixed;left:44px;right:44px;bottom:16px;height:clamp(78px,13vh,132px);display:flex;align-items:center;gap:clamp(14px,2vw,28px);padding:10px 16px;background:rgba(51,35,26,.92);border:1px solid var(--line-2);border-radius:18px;box-shadow:0 14px 40px rgba(0,0,0,.45);z-index:5}
 .sc-music.pulse{animation:musicIn .6s cubic-bezier(.2,.9,.3,1.1)}
 @keyframes musicIn{from{transform:translateY(12px);opacity:.4}to{transform:none;opacity:1}}
@@ -439,7 +439,6 @@ const SUPABASE_URL = 'https://nbmetyvgkzmmcfwkyhba.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ibWV0eXZna3ptbWNmd2t5aGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3OTQ2MDAsImV4cCI6MjEwNzM3MDYwMH0.WIpx6o_bLIG2Ik16Jje9qwYwZUtmluvX691wKKBcT6Y';
 const POLL_MS = 4000;          // 새로고침 간격
 const SPOTLIGHT_MS = 30000;    // 스포트라이트 교체 간격
-const SCREEN_RANK_MS = 5000;   // 큰 화면: 랭킹 패널(이름 점수·콤비) 표시 시간
 const MUSIC_SHOW_NAME = false;  // 큰 화면 '지금 나오는 곡' 띠에 신청자 이름까지 보여 줄지 (false면 특징만)
 const SCREEN_SPOT_MS = 10000;  // 큰 화면: 스포트라이트 한 사람 표시 시간
 const SCREEN_SPOT_PEOPLE = 5;  // 큰 화면: 스포트라이트 한 차례에 보여 줄 인원
@@ -1430,7 +1429,7 @@ async function startScreenMode() {
       <div class="join"><div class="txt"><div class="t1">지금 들어와서 등록하세요</div><div class="t2">${esc(joinUrl.replace(/^https?:\/\//, ''))}</div><div class="cnt"><span id="scCount">0</span>명 입장</div></div><div id="qr"></div></div></div>
     <div class="sc-body"><div class="sc-panel" id="scPanel"></div></div><div class="sc-progress" id="scProg"></div>`;
   try { new QRCode($('#qr'), { text: joinUrl, width: 130, height: 130, correctLevel: QRCode.CorrectLevel.M }); } catch (e) { }
-  // 순환: 스포트라이트(한 사람 5초 × 6명) → 이름 점수 TOP 10(5초) → 콤비 TOP 5(5초)
+  // 순환: 스포트라이트(한 사람씩 특징 + QR)만 계속 돌아요
   let lastSpot = null, spotTimer = null, rotateTimer = null, idx = 0;
   const pickSpot = () => { const pool = state.profiles.filter(p => p.intro && p.id !== lastSpot); if (!pool.length) return null; const p = pickRandom(pool); lastSpot = p.id; return p; };
   const personHTML = (p, n) => {
@@ -1448,16 +1447,9 @@ async function startScreenMode() {
       <div class="sc-pcount">${n} / ${SCREEN_SPOT_PEOPLE}</div></div>`;
   };
   const personQr = (p) => { const el = $('#scPersonQr'); if (!el || !p) return; try { new QRCode(el, { text: `${location.origin}${location.pathname}?p=${p.id}`, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M }); } catch (e) { } };
-  const lookOf = p => p.look ? `👕 ${p.look}` : '특징 미입력';   // 큰 화면에는 이름 대신 특징
   const panels = [
     { ms: SCREEN_SPOT_MS * SCREEN_SPOT_PEOPLE, render: () => { const p = pickSpot(); setTimeout(() => personQr(p), 0); return `<h2>오늘 밤, 이런 사람들이 와 있어요</h2><div class="sc-spot" id="scSpotBody">${personHTML(p, 1)}</div>`; },
       after: () => { let n = 1; spotTimer = setInterval(() => { const el = $('#scSpotBody'); if (!el) return; n++; if (n > SCREEN_SPOT_PEOPLE) return; const p = pickSpot(); el.innerHTML = personHTML(p, n); personQr(p); }, SCREEN_SPOT_MS); } },
-    { ms: SCREEN_RANK_MS, render: () => {
-      const ranked = scoreRanking().slice(0, 10);
-      return `<h2>이름 점수 TOP 10</h2><div class="sc-note">누군지는 특징을 보고 찾아보세요</div><div class="sc-rank">${ranked.map((x, i) => `<div class="it"><span class="no">${i + 1}</span><div><div>${esc(lookOf(x.p))}</div><div class="sub">${esc(x.s.title)}</div></div><span class="sc">${x.s.score}</span></div>`).join('') || '<div style="font-size:36px;color:var(--fg-2)">아직 등록한 사람이 없어요</div>'}</div>`; } },
-    { ms: SCREEN_RANK_MS, render: () => {
-      const top = allPairs().slice(0, 5);
-      return `<h2>오늘의 환상의 콤비 TOP 5</h2><div class="sc-rank" style="grid-template-columns:1fr">${top.map((c, i) => `<div class="it"><span class="no">${i + 1}</span><div><div>${esc(lookOf(c.a))} ✕ ${esc(lookOf(c.b))}</div><div class="sub">${esc(compatPhrase(c.pct))}</div></div><span class="sc">${c.pct}%</span></div>`).join('') || '<div style="font-size:36px;color:var(--fg-2)">두 명 이상 등록되면 보여요</div>'}</div>`; } },
   ];
   const gatePanel = () => `<div class="sc-gate"><div class="eyebrow" style="font-size:clamp(14px,2.2vh,20px)">등록 받는 중</div>
       <h2 style="margin:10px 0 4px">QR을 찍고 등록해 주세요</h2>
