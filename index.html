@@ -495,7 +495,7 @@ function bindLookPicker(root, sel, onChange) {
 // 화면 표시용 특징 한 줄
 function whereText(place, look) { return [place ? `📍 ${place}` : '', look ? `👕 ${look}` : ''].filter(Boolean).join(' · '); }
 // 테이블·성별: DB에 칸이 없어 hint 칸에 'T3|남' 형식으로 저장
-const TABLE_COUNT = 11;
+const TABLE_COUNT = 10;
 const GENDERS = ['남', '여'];
 function seatParse(h) { const m = /^T(\d+)\|(남|여)?$/.exec(h || ''); return m ? { table: +m[1], gender: m[2] || '' } : { table: 0, gender: '' }; }
 function seatJoin(table, gender) { return table || gender ? `T${table || 0}|${gender || ''}` : ''; }
