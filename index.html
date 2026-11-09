@@ -287,12 +287,6 @@ body.screen{overflow:hidden}
 .sc-rank .it:nth-child(1) .no{color:var(--brass-2)}.sc-rank .it:nth-child(2) .no{color:#EAD7BC}.sc-rank .it:nth-child(3) .no{color:#C9956A}
 .sc-rank .sc{margin-left:auto;font-family:var(--font-display);font-size:clamp(20px,4vh,40px);color:var(--brass-2)}
 .sc-rank .sub{font-size:clamp(12px,1.9vh,19px);color:var(--fg-2)}
-.sc-bgm{position:fixed;left:24px;bottom:20px;z-index:7;display:flex;align-items:center;gap:10px;padding:10px 18px;border-radius:999px;background:rgba(51,35,26,.88);border:1px solid var(--line-2);color:var(--fg-2);font-size:clamp(14px,1.8vh,18px);font-weight:700;cursor:pointer;box-shadow:var(--shadow-sm)}
-.sc-bgm.off{color:var(--fg);background:var(--brass);border-color:var(--brass);font-size:clamp(16px,2.2vh,22px);padding:14px 24px}
-.sc-bgm .eq{display:inline-flex;gap:3px;align-items:flex-end;height:16px}.sc-bgm .eq i{width:3px;background:var(--brass-2);animation:eq 1s ease-in-out infinite}.sc-bgm .eq i:nth-child(2){animation-delay:.3s}.sc-bgm .eq i:nth-child(3){animation-delay:.6s}
-.sc-bgm.off .eq{display:none}
-@keyframes eq{0%,100%{height:4px}50%{height:16px}}
-#bgmBox{position:fixed;left:-9999px;top:0;width:200px;height:120px;opacity:0;pointer-events:none}
 .sc-gate{text-align:center}
 .sc-gate h2{font-size:clamp(36px,7vh,72px)}
 .sc-gate-sub{font-size:clamp(18px,3vh,30px);color:var(--fg-2);line-height:1.5;margin-top:10px}
@@ -1442,53 +1436,6 @@ function updateNowPlaying() {
 /* =========================================================
    7. 큰 화면 모드 (?screen=1)
    ========================================================= */
-/* 등록 받는 동안(참가자 화면 열기 전) 큰 화면에서 배경음을 한 곡 반복으로 틀어요.
-   ?bgm=영상ID 로 다른 곡, ?bgm=off 로 끄기. 스페이스 또는 왼쪽 아래 버튼으로 켜고 끌 수 있어요. */
-const BGM_DEFAULT = 'Mw5mAozjC6M'; // Troye Sivan - Strawberries & Cigarettes (공식 음원)
-const bgm = { player: null, ready: false, want: false, userOff: false, fade: null };
-function bgmSetup(root) {
-  const q = new URLSearchParams(location.search).get('bgm');
-  if (q === 'off') return;
-  const id = q && /^[\w-]{11}$/.test(q) ? q : BGM_DEFAULT;
-  root.insertAdjacentHTML('beforeend', `<div id="bgmBox"><div id="bgmPlayer"></div></div><button class="sc-bgm off hidden" id="bgmBtn"></button>`);
-  const btn = $('#bgmBtn');
-  btn.onclick = () => bgmToggle();
-  document.addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); bgmToggle(); } });
-  loadYT().then(() => {
-    bgm.player = new YT.Player('bgmPlayer', { width: 200, height: 120, videoId: id,
-      playerVars: { autoplay: 0, controls: 0, rel: 0, playsinline: 1, disablekb: 1, iv_load_policy: 3 },
-      events: {
-        onReady: () => { bgm.ready = true; bgm.player.setVolume(100); bgmApply(); },
-        onStateChange: e => { if (e.data === 0) { bgm.player.seekTo(0, true); bgm.player.playVideo(); } bgmLabel(); },
-      } });
-  });
-}
-function bgmPlaying() { try { return bgm.player.getPlayerState() === 1; } catch (e) { return false; } }
-function bgmLabel() {
-  const btn = $('#bgmBtn'); if (!btn) return;
-  if (!bgm.want) { btn.classList.add('hidden'); return; }
-  btn.classList.remove('hidden');
-  const on = bgmPlaying();
-  btn.classList.toggle('off', !on);
-  btn.innerHTML = on ? `<span class="eq"><i></i><i></i><i></i></span>🎵 Strawberries &amp; Cigarettes · 끄려면 스페이스` : '🎵 음악 켜기';
-}
-function bgmToggle() {
-  if (!bgm.ready) return;
-  if (bgmPlaying()) { bgm.userOff = true; bgm.player.pauseVideo(); }
-  else { bgm.userOff = false; bgm.want = true; clearInterval(bgm.fade); bgm.player.setVolume(100); bgm.player.playVideo(); }
-  setTimeout(bgmLabel, 300);
-}
-// 등록 중이면 틀고, 참가자 화면이 열리면 3초 동안 줄이면서 멈춰요
-function bgmSync(gating) { bgm.want = gating; bgmApply(); }
-function bgmApply() {
-  if (!bgm.ready) return;
-  clearInterval(bgm.fade);
-  if (bgm.want && !bgm.userOff) { bgm.player.setVolume(100); bgm.player.playVideo(); setTimeout(bgmLabel, 1500); }
-  else if (!bgm.want && bgmPlaying()) {
-    let v = 100; bgm.fade = setInterval(() => { v -= 5; if (v <= 0) { clearInterval(bgm.fade); bgm.player.pauseVideo(); bgm.player.setVolume(100); bgmLabel(); } else bgm.player.setVolume(v); }, 150);
-  }
-  bgmLabel();
-}
 async function startScreenMode() {
   document.body.classList.add('screen');
   const root = $('#screenView'); root.classList.remove('hidden');
@@ -1497,7 +1444,6 @@ async function startScreenMode() {
       <div class="join"><div class="txt"><div class="t1">지금 들어와서 등록하세요</div><div class="t2">${esc(joinUrl.replace(/^https?:\/\//, ''))}</div><div class="cnt"><span id="scCount">0</span>명 입장</div></div><div id="qr"></div></div></div>
     <div class="sc-body"><div class="sc-panel" id="scPanel"></div></div><div class="sc-progress" id="scProg"></div>`;
   try { new QRCode($('#qr'), { text: joinUrl, width: 130, height: 130, correctLevel: QRCode.CorrectLevel.M }); } catch (e) { }
-  bgmSetup(root);
   // 순환: 스포트라이트(한 사람씩 소개 + QR)만 계속 돌아요
   let lastSpot = null, spotTimer = null, rotateTimer = null, idx = 0;
   const pickSpot = () => { const pool = state.profiles.filter(p => p.intro && p.id !== lastSpot); if (!pool.length) return null; const p = pickRandom(pool); lastSpot = p.id; return p; };
@@ -1530,7 +1476,6 @@ async function startScreenMode() {
     const panel = $('#scPanel'); panel.style.animation = 'none'; void panel.offsetWidth; panel.style.animation = '';
     const prog = $('#scProg');
     document.body.classList.toggle('sc-gating', !state.open);
-    bgmSync(!state.open);
     if (!state.open) { panel.innerHTML = gatePanel(); try { new QRCode($('#gateQr'), { text: joinUrl, width: 440, height: 440, correctLevel: QRCode.CorrectLevel.M }); } catch (e) { } prog.style.transition = 'none'; prog.style.width = '0'; return; }
     let pn = panels[idx % panels.length]; idx++;
     for (let g = 0; g < panels.length && pn.skip && pn.skip(); g++) { pn = panels[idx % panels.length]; idx++; }
