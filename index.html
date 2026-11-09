@@ -857,7 +857,7 @@ function renderRegister() {
       ${s.examples ? `<div class="eyebrow dim" style="margin:6px 0 8px">예시</div><div class="chips">${s.examples.map(x => `<span class="chip" data-ex="${esc(x)}">${esc(x)}</span>`).join('')}</div>` : ''}`;
   }
   root.innerHTML = `<div class="reg-wrap">
-    <div class="reg-head"><img class="logo" src="logo.png?v=3" alt="MIXER SEOUL"><div class="muted" style="margin-top:10px">${reg.editing ? '내 정보 수정' : '오늘 밤, 먼저 말 걸 핑계를 만들어 드릴게요'}</div></div>
+    <div class="reg-head"><img class="logo" src="logo.png?v=3" alt="MIXER SEOUL"><div class="muted" style="margin-top:10px">${reg.editing ? '내 정보 수정' : '오늘 밤, 먼저 말 걸 핑계를 만들어 드릴게요'}</div><div class="dim" style="margin-top:4px;font-size:13px">적은 내용은 테이블 대화 카드에도 나와요. 궁금한 것 같은 건 이름 없이 나와요.</div></div>
     ${reg.only ? '' : dots}
     <div class="reg-card" key="${reg.step}">
       
