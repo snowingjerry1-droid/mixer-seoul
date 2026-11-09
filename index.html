@@ -467,18 +467,28 @@ const LOOK_GROUPS = [
   ['머리', ['짧은 머리', '단발', '긴 머리', '묶은 머리', '모자', '없음']],
   ['포인트', ['안경', '귀걸이', '목걸이', '시계', '없음']],
 ];
+// DB(mingle_profiles.look)는 20자까지만 받아요. 길면 「상의」를 빼고, 그래도 길면 쉼표로 줄여요.
+const LOOK_MAX = 20;
 function lookCompose(sel, extra) {
-  const [c, h, pt] = sel;
-  return [c && c !== '없음' ? `${c} 상의` : '', h && h !== '없음' ? h : '', pt && pt !== '없음' ? pt : '', (extra || '').trim()].filter(Boolean).join(' · ').slice(0, 40);
+  const [c, h, pt] = sel, x = (extra || '').trim();
+  const on = v => v && v !== '없음' ? v : '';
+  const tries = [
+    [on(c) ? `${c} 상의` : '', on(h), on(pt), x].filter(Boolean).join(' · '),
+    [on(c), on(h), on(pt), x].filter(Boolean).join(' · '),
+    [on(c), on(h), on(pt), x].filter(Boolean).join(', '),
+  ];
+  return tries.find(t => t.length <= LOOK_MAX) || tries[2];
 }
 // 줄마다 하나(없음 포함)는 꼭 고르고, 결과가 비면 직접 적게 함
 function lookMissing(sel, extra) {
   const gi = sel.findIndex(x => !x); if (gi >= 0) return `${LOOK_GROUPS[gi][0]}에서 하나 골라 주세요. 맞는 게 없으면 ‘없음’이요.`;
-  if (!lookCompose(sel, extra)) return '모두 ‘없음’이면 아래에 직접 적어 주세요. 예: 빨간 니트';
+  const v = lookCompose(sel, extra);
+  if (!v) return '모두 ‘없음’이면 아래에 직접 적어 주세요. 예: 빨간 니트';
+  if (v.length > LOOK_MAX) return `특징이 ${v.length}자예요. ${LOOK_MAX}자까지라 직접 적기를 줄이거나 하나를 ‘없음’으로 바꿔 주세요.`;
   return '';
 }
 function lookParse(look) {
-  const parts = (look || '').split(' · ').map(x => x.trim()); const sel = ['', '', '']; const rest = [];
+  const parts = (look || '').split(/ · |, /).map(x => x.trim()); const sel = ['', '', '']; const rest = [];
   parts.forEach(x => { const c = x.replace(/ 상의$/, ''); const gi = LOOK_GROUPS.findIndex(([, opts]) => opts.includes(c)); if (gi >= 0 && !sel[gi]) sel[gi] = c; else if (x) rest.push(x); });
   return { sel, extra: rest.join(' · ') };
 }
@@ -489,7 +499,13 @@ function lookPickerHTML(sel, extra) {
 }
 function bindLookPicker(root, sel, onChange) {
   const ex = root.querySelector('#lookExtra');
-  const upd = () => { const v = lookCompose(sel, ex.value); root.querySelector('#lookPrev').innerHTML = v ? esc(v) : '<span class="dim">위에서 골라 주세요</span>'; onChange && onChange(); };
+  const upd = () => {
+    const v = lookCompose(sel, ex.value), over = v.length > LOOK_MAX;
+    root.querySelector('#lookPrev').innerHTML = v ? esc(v) + (over ? ` <span style="color:#FFB4A3">(${v.length}/${LOOK_MAX}자)</span>` : '') : '<span class="dim">위에서 골라 주세요</span>';
+    // 고치는 순간 예전 오류 문구는 지워요
+    const e = root.querySelector('#regErr') || root.querySelector('#hintErr'); if (e) e.textContent = '';
+    onChange && onChange();
+  };
   root.querySelectorAll('[data-lg]').forEach(c => c.onclick = () => { const gi = +c.dataset.lg; sel[gi] = sel[gi] === c.dataset.lo ? '' : c.dataset.lo; root.querySelectorAll(`[data-lg="${gi}"]`).forEach(x => x.classList.toggle('sel', x.dataset.lo === sel[gi])); upd(); });
   ex.addEventListener('input', upd);
 }
