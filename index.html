@@ -1108,7 +1108,7 @@ function seatMap(layout, floor, mine, sel, all, flip) {
   const hi = mine;
   let its = layout.filter(i => i.floor === floor && i.type !== 'sofa' && !(floor === 2 && i.type !== 'table'));
   if (flip) { const W = floor === 1 ? 1000 : 440, H = 700;
-    its = its.map(i => ({ ...i, x: W - i.x - i.w, y: H - i.y - i.h, size: i.type === 'label' ? Math.round((i.size || 26) * 1.7) : i.size, text: i.type === 'label' ? String(i.text).replace(/[→←]/g, '').trim() : i.type === 'screen' ? '▲ 지금 보고 있는 화면' : i.text })); }
+    its = its.map(i => ({ ...i, x: W - i.x - i.w, y: H - i.y - i.h, size: i.type === 'label' ? Math.round((i.size || 26) * 1.7) : i.size, text: i.type === 'label' ? String(i.text).replace(/[→←]/g, '').trim() : i.type === 'screen' ? (typeof flip === 'string' ? flip : '▲ 앞 · 대형 스크린') : i.text })); }
   if (!its.length) return '';
   let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
   its.forEach(i => { const cx = i.x + i.w / 2, cy = i.y + i.h / 2, hw = i.r ? Math.hypot(i.w, i.h) / 2 : i.w / 2, hh = i.r ? Math.hypot(i.w, i.h) / 2 : i.h / 2, top = i.type === 'screen' ? (flip ? 56 : 40) : 0;
@@ -1207,10 +1207,10 @@ function renderSeatTables(si) {
   const grid = nums.map(n => { const t = si.tables[n], c = n === STAFF_T ? staffPeople().length : (t.m || []).length + (t.w || []).length; return `<button class="tbl-cell ${n === sel ? 'on' : ''} ${n === myT ? 'mine' : ''}" data-tsel="${n}"><span class="tn">${n}</span><span class="tc">${n === STAFF_T ? '스태프' : `${c}명`}</span></button>`; }).join('');
   return `<div class="section" style="margin-top:8px"><div class="section-title"><h2>🪑 테이블</h2><span class="sub">${myT ? `나는 <b style="color:var(--brass-2)">${myT === STAFF_T ? '10번 (스태프)' : myT + '번'}</b>` : ''}</span></div>
     ${myCard}
-    <div class="card" style="margin-top:12px"><div class="row" style="justify-content:space-between;align-items:baseline"><div class="eyebrow">1층 · 1~7번</div><div class="dim" style="font-size:12px">${si.mine ? '<span style="color:var(--peach)">■</span> 내 자리 · ' : ''}<span style="color:#E3B57A">□</span> 고른 테이블</div></div>
-      ${seatMap(si.layout, 1, si.mine, sel)}
-      <div class="eyebrow" style="margin-top:14px;color:#6FA3E0">2층 소파 · 8·9번</div>
-      ${seatMap(si.layout, 2, si.mine, sel)}</div>
+    <div class="card" style="margin-top:12px"><div class="row" style="justify-content:space-between;align-items:baseline"><div class="eyebrow">1층 · 1~7번 · 스크린을 보고 선 방향</div><div class="dim" style="font-size:12px">${si.mine ? '<span style="color:var(--peach)">■</span> 내 자리 · ' : ''}<span style="color:#E3B57A">□</span> 고른 테이블</div></div>
+      ${seatMap(si.layout, 1, si.mine, sel, false, true)}
+      <div class="eyebrow" style="margin-top:14px;color:#6FA3E0">2층 소파 · 8·9번 · 스크린 쪽이 위</div>
+      ${seatMap(si.layout, 2, si.mine, sel, false, '▲ 스크린 쪽')}</div>
     <div class="muted" style="margin:14px 0 10px">번호를 누르면 그 테이블이 그림에 표시되고, 누가 앉는지 보여요. 자리는 진행자가 정해요.</div>
     <div class="tbl-grid">${grid}</div></div>
     <div class="section"><div class="section-title"><h2>${sel}번 테이블 <span style="font-size:14px;color:var(--fg-3);font-family:var(--font-body);font-weight:500">${people.length}명 · ${where(sel)}</span></h2><span class="sub">${genderCount(people)}</span></div>
@@ -1586,7 +1586,7 @@ async function startScreenMode() {
     { ms: SCREEN_SPOT_MS * SCREEN_SPOT_PEOPLE, render: () => { const p = pickSpot(); setTimeout(() => personQr(p), 0); return `<h2>오늘 밤, 이런 사람들이 와 있어요</h2><div class="sc-spot" id="scSpotBody">${personHTML(p, 1)}</div>`; },
       after: () => { let n = 1; spotTimer = setInterval(() => { const el = $('#scSpotBody'); if (!el) return; n++; if (n > SCREEN_SPOT_PEOPLE) return; const p = pickSpot(); el.innerHTML = personHTML(p, n); personQr(p); }, SCREEN_SPOT_MS); } },
   ];
-  const gateMap = () => { const L = state.seats?.layout || []; const f1 = seatMap(L, 1, 0, 0, true, true), f2 = seatMap(L, 2, 0, 0, true, true);
+  const gateMap = () => { const L = state.seats?.layout || []; const f1 = seatMap(L, 1, 0, 0, true, '▲ 지금 보고 있는 화면'), f2 = seatMap(L, 2, 0, 0, true, '▲ 스크린 쪽');
     return f1 ? `<div class="sc-gate-map"><div class="fl"><div class="fk">1층 테이블 배치</div>${f1}</div>${f2 ? `<div class="fl f2"><div class="fk">8·9번은 2층 소파<br><span style="font-weight:600">계단으로 올라가요</span></div>${f2}</div>` : ''}</div>` : ''; };
   const gatePanel = () => `<div class="sc-gate"><div class="eyebrow" style="font-size:clamp(14px,2.2vh,20px)">등록 받는 중</div>
       <h2 style="margin:10px 0 4px">QR을 찍고 등록해 주세요</h2>
