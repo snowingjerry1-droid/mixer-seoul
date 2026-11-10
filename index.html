@@ -1092,8 +1092,8 @@ function seatInfo() {
   return { r, title: R.title || `${r}차 자리`, time: R.time || '', tables: R.tables, mine, layout: d.layout || [], example: !!d.example };
 }
 // 배치도 (내 테이블만 강조). 1~7번은 1층, 8번 이상은 2층 소파
-function seatMap(layout, tables, hi) {
-  const floor = hi >= 8 ? 2 : 1;
+function seatMap(layout, floor, mine, sel) {
+  const hi = mine;
   const its = layout.filter(i => i.floor === floor && i.type !== 'sofa' && !(floor === 2 && i.type !== 'table'));
   if (!its.length) return '';
   let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
@@ -1108,14 +1108,15 @@ function seatMap(layout, tables, hi) {
     else if (i.type === 'pillar') g += `<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" rx="6" fill="#5A4E48" transform="${rot}"/>`;
     else if (i.type === 'label') g += `<text x="${i.x + 4}" y="${i.y + i.h * .75}" font-size="${i.size || 26}" font-weight="800" fill="#B9AAA0">${esc(i.text)}</text>`;
     else if (i.type === 'table') {
-      const on = String(i.text) === String(hi), op = on ? 1 : .35, fill = on ? col : 'rgba(255,255,255,.04)';
-      g += i.shape === 'round' ? `<ellipse cx="${cx}" cy="${cy}" rx="${i.w / 2}" ry="${i.h / 2}" fill="${fill}" stroke="${col}" stroke-width="${on ? 8 : 4}" opacity="${op}"/>`
-        : `<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" rx="12" fill="${fill}" stroke="${col}" stroke-width="${on ? 8 : 4}" opacity="${op}" transform="${rot}"/>`;
+      const on = String(i.text) === String(hi), picked = !on && String(i.text) === String(sel), op = on || picked ? 1 : .55, fill = on ? col : picked ? 'rgba(227,181,122,.22)' : 'rgba(255,255,255,.04)';
+      const stroke = picked ? '#E3B57A' : col, sw = on || picked ? 8 : 4;
+      g += i.shape === 'round' ? `<ellipse cx="${cx}" cy="${cy}" rx="${i.w / 2}" ry="${i.h / 2}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op}"/>`
+        : `<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" rx="12" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op}" transform="${rot}"/>`;
       const big = Math.max(40, Math.min(64, Math.min(i.w, i.h) * (i.shape === 'round' ? .5 : .85)));
       g += `<text x="${cx}" y="${cy + big * .36}" text-anchor="middle" font-size="${big}" font-weight="900" fill="${on ? '#1A120D' : '#FFF'}" opacity="${op}">${esc(i.text)}</text>`;
     }
   });
-  return `<svg viewBox="${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}" style="width:100%;height:auto;display:block;margin-top:10px" font-family="Pretendard Variable, Pretendard, sans-serif">${g}</svg>`;
+  return `<svg viewBox="${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}" style="${floor === 2 ? 'width:60%;max-width:240px;margin:10px auto 0' : 'width:100%;margin-top:10px'};height:auto;display:block" font-family="Pretendard Variable, Pretendard, sans-serif">${g}</svg>`;
 }
 // 배정 명단의 이름 → 등록한 프로필 (없으면 이름만 있는 카드)
 function seatPeople(t) {
@@ -1164,12 +1165,16 @@ function renderSeatTables(si) {
   const myCard = si.mine ? `<div class="card" style="border-color:var(--brass)"><div class="row" style="justify-content:space-between;align-items:baseline"><div class="eyebrow">지금 내 자리 · ${esc(si.title)}</div><div class="dim">${esc(si.time)}</div></div>
       <div class="row" style="align-items:center;gap:14px;margin-top:6px;flex-wrap:nowrap"><div style="font-family:var(--font-body);font-weight:900;font-size:56px;line-height:1;color:${si.mine >= 8 ? '#6FA3E0' : 'var(--peach)'}">${si.mine}번</div>
       <div style="font-size:18px;font-weight:800">${where(si.mine)}${si.mine >= 8 ? '<div class="dim" style="font-size:13px;font-weight:600">원형으로 둘러앉아요</div>' : ''}</div></div>
-      ${seatMap(si.layout, si.tables, si.mine)}${si.example ? '<div class="dim" style="margin-top:8px;font-size:12px">예시 명단이에요 · 실제 자리가 아니에요</div>' : ''}</div>`
+      ${si.example ? '<div class="dim" style="margin-top:8px;font-size:12px">예시 명단이에요 · 실제 자리가 아니에요</div>' : ''}</div>`
     : `<div class="card"><div class="eyebrow">지금 내 자리 · ${esc(si.title)}</div><div style="margin-top:6px">명단에서 <b>${esc(me.name)}</b> 이름을 못 찾았어요. 진행자에게 말해 주세요.</div></div>`;
   const grid = nums.map(n => { const t = si.tables[n], c = (t.m || []).length + (t.w || []).length; return `<button class="tbl-cell ${n === sel ? 'on' : ''} ${n === si.mine ? 'mine' : ''}" data-tsel="${n}"><span class="tn">${n}</span><span class="tc">${c}명</span></button>`; }).join('');
   return `<div class="section" style="margin-top:8px"><div class="section-title"><h2>🪑 테이블</h2><span class="sub">${si.mine ? `나는 <b style="color:var(--brass-2)">${si.mine}번</b>` : ''}</span></div>
     ${myCard}
-    <div class="muted" style="margin:14px 0 10px">번호를 누르면 그 테이블에 누가 앉는지 보여요. 자리는 진행자가 정해요.</div>
+    <div class="card" style="margin-top:12px"><div class="row" style="justify-content:space-between;align-items:baseline"><div class="eyebrow">1층 · 1~7번</div><div class="dim" style="font-size:12px">${si.mine ? '<span style="color:var(--peach)">■</span> 내 자리 · ' : ''}<span style="color:#E3B57A">□</span> 고른 테이블</div></div>
+      ${seatMap(si.layout, 1, si.mine, sel)}
+      <div class="eyebrow" style="margin-top:14px;color:#6FA3E0">2층 소파 · 8·9번</div>
+      ${seatMap(si.layout, 2, si.mine, sel)}</div>
+    <div class="muted" style="margin:14px 0 10px">번호를 누르면 그 테이블이 그림에 표시되고, 누가 앉는지 보여요. 자리는 진행자가 정해요.</div>
     <div class="tbl-grid">${grid}</div></div>
     <div class="section"><div class="section-title"><h2>${sel}번 테이블 <span style="font-size:14px;color:var(--fg-3);font-family:var(--font-body);font-weight:500">${people.length}명 · ${where(sel)}</span></h2><span class="sub">${genderCount(people)}</span></div>
       ${people.length ? people.map(tableMember).join('') : '<div class="empty">이 테이블은 이번 라운드에 비어 있어요</div>'}</div>`;
