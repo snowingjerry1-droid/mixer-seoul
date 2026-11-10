@@ -1120,6 +1120,7 @@ function seatMap(layout, floor, mine, sel, all, flip) {
     const cx = i.x + i.w / 2, cy = i.y + i.h / 2, rot = `rotate(${i.r || 0} ${cx} ${cy})`;
     if (i.type === 'screen') g += `<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" rx="${i.h / 2}" fill="#E9DED4"/><text x="${cx}" y="${i.y - 12}" text-anchor="middle" font-size="${flip ? 40 : 26}" font-weight="800" fill="#E9DED4">${esc(i.text)}</text>`;
     else if (i.type === 'pillar') g += `<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" rx="6" fill="#5A4E48" transform="${rot}"/>`;
+    else if (i.type === 'bar') g += `<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" rx="${i.w / 2}" fill="#E3B57A"/><text x="${i.x + i.w + 14}" y="${cy + 13}" font-size="${flip ? 40 : 30}" font-weight="800" fill="#E3B57A">${esc(i.text)}</text>`;
     else if (i.type === 'label') g += `<text x="${i.x + 4}" y="${i.y + i.h * .75}" font-size="${i.size || 26}" font-weight="800" fill="#B9AAA0">${esc(i.text)}</text>`;
     else if (i.type === 'table') {
       const on = String(i.text) === String(hi), picked = !on && String(i.text) === String(sel), op = all || on || picked ? 1 : .55, fill = on ? col : picked ? 'rgba(227,181,122,.22)' : flip ? (floor === 1 ? 'rgba(240,138,93,.18)' : 'rgba(111,163,224,.18)') : 'rgba(255,255,255,.04)';
