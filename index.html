@@ -780,6 +780,7 @@ document.addEventListener('click', keepAwake, { once: true });
 async function fetchProfiles() {
   const { data, error } = await sb.from('mingle_profiles').select('*').order('created_at');
   if (!error && data) state.profiles = data.map(p => { const st = seatParse(p.hint); return { ...p, ...splitTopic(p.topic), ...st, place: '', hint: st.table ? `🪑 ${tableLabel(st.table)}` : '' }; });   // 위치는 받지 않음, 특징만
+  applySeatTables();
   if (state.me && data) { state.me = byId(state.me.id) || null; }
 }
 async function fetchState() {
@@ -826,7 +827,7 @@ function startSync() {
    ========================================================= */
 const regSteps = [
   { key: 'name', title: '이름을 알려 주세요', lead: '한글 실명으로요. 궁합과 이름 점수 계산에 써요.', ex: '동명이인은 자동으로 <b>김민지②</b>처럼 구분돼요', max: 20, placeholder: '예: 김민지' },
-  { key: 'seat', title: '🪑 몇 번 테이블에 앉았어요?', lead: '테이블 탭에서 같은 테이블 사람들을 볼 수 있어요. 자리를 옮기면 나중에 바꿀 수 있어요.', ex: '테이블 번호는 테이블 위에 놓여 있어요' },
+  { key: 'seat', title: '🪑 몇 번 테이블에 앉았어요?', lead: '테이블 탭에서 같은 테이블 사람들을 볼 수 있어요.', ex: '명단에 있는 사람은 테이블이 자동으로 채워져요' },
   { key: 'intro', title: '이 얘기 나오면 말이 많아져요', lead: '좋아하는 거 하나면 돼요. 단어 하나도 충분해요.', ex: '누가 이걸로 말 걸어오면 반가운 걸로요', max: 15, placeholder: '예: 한강 러닝', examples: LIKE_EXAMPLES },
   { key: 'quick', title: '취향 밸런스 게임', lead: '고민 없이 톡톡. 같은 편이면 반갑고, 다른 편이면 할 말이 생겨요.', ex: '여섯 개 모두 골라야 다음으로 넘어가요' },
   { key: 'know', title: '이건 저한테 물어봐도 돼요', lead: '해 봤거나 자주 하는 거면 충분해요. 잘 알 필요 없어요.', ex: '내 카드와 큰 화면에 떠요. 이걸로 말 걸어도 된다는 표시예요', max: 15, placeholder: '예: 성수 맛집', examples: KNOW_EXAMPLES, optional: true, skipText: '딱히 없어요, 넘어갈게요' },
@@ -865,7 +866,11 @@ function renderRegister() {
   } else if (s.key === 'look') {
     body = lookPickerHTML(reg.lookSel, reg.lookExtra);
   } else if (s.key === 'seat') {
-    body = `<div class="eyebrow dim" style="margin:0 0 6px">성별</div><div class="quick-a" style="margin-bottom:16px">${GENDERS.map(g => `<button class="quick-btn ${reg.data.gender === g ? 'on' : ''}" data-gd="${g}">${g === '남' ? '남자' : '여자'}</button>`).join('')}</div>
+    const auto = seatOf(reg.data.name);
+    if (auto) { reg.data.table = auto.table; if (!reg.data.gender) reg.data.gender = auto.gender; }
+    if (auto) body = `<div class="eyebrow dim" style="margin:0 0 6px">성별</div><div class="quick-a" style="margin-bottom:16px">${GENDERS.map(g => `<button class="quick-btn ${reg.data.gender === g ? 'on' : ''}" data-gd="${g}">${g === '남' ? '남자' : '여자'}</button>`).join('')}</div>
+      <div class="eyebrow dim" style="margin:0 0 6px">내 테이블</div><div class="card" style="border-color:var(--brass);text-align:center"><div style="font-family:var(--font-body);font-weight:900;font-size:44px;line-height:1;color:var(--peach)">${auto.table}번</div><div class="dim" style="margin-top:6px">명단에 있는 자리예요. 라운드가 바뀌면 자동으로 바뀌어요</div></div>`;
+    else body = `<div class="eyebrow dim" style="margin:0 0 6px">성별</div><div class="quick-a" style="margin-bottom:16px">${GENDERS.map(g => `<button class="quick-btn ${reg.data.gender === g ? 'on' : ''}" data-gd="${g}">${g === '남' ? '남자' : '여자'}</button>`).join('')}</div>
       <div class="eyebrow dim" style="margin:0 0 6px">테이블 번호</div><div class="tbl-pick">${Array.from({ length: TABLE_COUNT }, (_, i) => i + 1).map(n => `<button class="tbl-btn ${reg.data.table === n ? 'on' : ''}" data-tb="${n}">${n}</button>`).join('')}</div>`;
   } else if (s.key === 'quick') {
     body = `<div class="stack" id="quickWrap">${QUICK_QUESTIONS.map((x, i) => `<div class="quick-row"><div class="quick-q">${esc(x.q)}</div><div class="quick-a">${x.a.map(a => `<button class="quick-btn ${reg.data.quick[i] === a ? 'on' : ''}" data-qi="${i}" data-qa="${esc(a)}">${esc(a)}</button>`).join('')}</div></div>`).join('')}</div>`;
@@ -1076,8 +1081,8 @@ async function fetchSeats() {
   try {
     const r = await fetch(SEATS_URL + '?ts=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return;
     const v = await r.json(); const sig = v.updatedAt + '|' + v.current;
-    if (sig !== state.seatSig) { const first = !state.seatSig; state.seatSig = sig; state.seats = v; state.tableSel = null;
-      if (state.tab === 'table' && !state.busy && state.me) render();
+    if (sig !== state.seatSig) { const first = !state.seatSig; state.seatSig = sig; state.seats = v; state.tableSel = null; applySeatTables();
+      if (state.me && !state.busy && !$('#app').classList.contains('hidden')) render();
       if (!first && state.me && seatInfo()) toast('자리가 새로 나왔어요', '🪑 테이블 탭에서 확인해 주세요', { icon: '🪑', ms: 4000 }); }
   } catch (e) {}
 }
@@ -1117,6 +1122,23 @@ function seatMap(layout, floor, mine, sel) {
     }
   });
   return `<svg viewBox="${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}" style="${floor === 2 ? 'width:60%;max-width:240px;margin:10px auto 0' : 'width:100%;margin-top:10px'};height:auto;display:block" font-family="Pretendard Variable, Pretendard, sans-serif">${g}</svg>`;
+}
+// 자리 명단에서 이름으로 지금 라운드 테이블 찾기 ({table, gender} 또는 null)
+function seatOf(name) {
+  const d = state.seats; if (!d || !d.rounds) return null;
+  const R = d.rounds[String(d.current || (d.visible || []).slice(-1)[0] || '')]; if (!R || !R.tables) return null;
+  const n = (name || '').replace(/\s+/g, '');
+  for (const [t, v] of Object.entries(R.tables)) { if ((v.m || []).includes(n)) return { table: +t, gender: '남' }; if ((v.w || []).includes(n)) return { table: +t, gender: '여' }; }
+  return null;
+}
+// 화면에 보이는 테이블 번호는 자리 명단을 따라요 (명단에 없는 사람만 등록 때 고른 번호). DB 값은 그대로 둬요
+function applySeatTables() {
+  (state.profiles || []).forEach(p => {
+    if (p._dbTable === undefined) { p._dbTable = p.table; p._dbGender = p.gender; }
+    const st = seatOf(p.name);
+    p.table = st ? st.table : p._dbTable; p.gender = p._dbGender || (st ? st.gender : '');
+    p.hint = p.table ? `🪑 ${tableLabel(p.table)}` : '';
+  });
 }
 // 배정 명단의 이름 → 등록한 프로필 (없으면 이름만 있는 카드)
 function seatPeople(t) {
@@ -1620,7 +1642,7 @@ async function boot() {
   if (params.get('p')) { ls.set('mixer_pending', params.get('p')); history.replaceState(null, '', location.pathname); }
   document.querySelectorAll('.tab').forEach(t => t.onclick = () => switchTab(t.dataset.tab));
   $('#settingsBtn').onclick = openSettings;
-  await Promise.all([fetchProfiles(), fetchState()]);
+  await Promise.all([fetchSeats(), fetchState()]); await fetchProfiles();   // 자리 명단을 먼저 받아야 등록·테이블 번호가 맞아요
   state.me = state.profiles.find(p => p.device_id === deviceId()) || null;
   if (!state.me) { showRegister(); }
   else if (!state.open) { showWaiting(); }
