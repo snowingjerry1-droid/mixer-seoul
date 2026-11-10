@@ -516,7 +516,7 @@ const TABLE_COUNT = 10;
 const GENDERS = ['남', '여'];
 function seatParse(h) { const m = /^T(\d+)\|(남|여)?$/.exec(h || ''); return m ? { table: +m[1], gender: m[2] || '' } : { table: 0, gender: '' }; }
 function seatJoin(table, gender) { return table || gender ? `T${table || 0}|${gender || ''}` : ''; }
-function tableLabel(n) { return n ? `${n}번 테이블` : ''; }
+function tableLabel(n) { return n === 10 ? '10번 (스태프)' : n ? `${n}번 테이블` : ''; }
 
 // 양자택일 질문: 답이 그대로 키워드가 되어 '나랑 통하는 사람' 겹침에 쓰임
 const QUICK_QUESTIONS = [
@@ -871,7 +871,7 @@ function renderRegister() {
     if (auto) body = `<div class="eyebrow dim" style="margin:0 0 6px">성별</div><div class="quick-a" style="margin-bottom:16px">${GENDERS.map(g => `<button class="quick-btn ${reg.data.gender === g ? 'on' : ''}" data-gd="${g}">${g === '남' ? '남자' : '여자'}</button>`).join('')}</div>
       <div class="eyebrow dim" style="margin:0 0 6px">내 테이블</div><div class="card" style="border-color:var(--brass);text-align:center"><div style="font-family:var(--font-body);font-weight:900;font-size:44px;line-height:1;color:var(--peach)">${auto.table}번</div><div class="dim" style="margin-top:6px">명단에 있는 자리예요. 라운드가 바뀌면 자동으로 바뀌어요</div></div>`;
     else body = `<div class="eyebrow dim" style="margin:0 0 6px">성별</div><div class="quick-a" style="margin-bottom:16px">${GENDERS.map(g => `<button class="quick-btn ${reg.data.gender === g ? 'on' : ''}" data-gd="${g}">${g === '남' ? '남자' : '여자'}</button>`).join('')}</div>
-      <div class="eyebrow dim" style="margin:0 0 6px">테이블 번호</div><div class="tbl-pick">${Array.from({ length: TABLE_COUNT }, (_, i) => i + 1).map(n => `<button class="tbl-btn ${reg.data.table === n ? 'on' : ''}" data-tb="${n}">${n}</button>`).join('')}</div>`;
+      <div class="eyebrow dim" style="margin:0 0 6px">테이블 번호</div><div class="tbl-pick">${Array.from({ length: TABLE_COUNT }, (_, i) => i + 1).map(n => `<button class="tbl-btn ${reg.data.table === n ? 'on' : ''}" data-tb="${n}">${n === 10 ? '10<small style="display:block;font-size:11px;font-weight:600;color:var(--fg-2)">스태프</small>' : n}</button>`).join('')}</div>`;
   } else if (s.key === 'quick') {
     body = `<div class="stack" id="quickWrap">${QUICK_QUESTIONS.map((x, i) => `<div class="quick-row"><div class="quick-q">${esc(x.q)}</div><div class="quick-a">${x.a.map(a => `<button class="quick-btn ${reg.data.quick[i] === a ? 'on' : ''}" data-qi="${i}" data-qa="${esc(a)}">${esc(a)}</button>`).join('')}</div></div>`).join('')}</div>`;
   } else {
@@ -1180,17 +1180,22 @@ function renderTables() {
 }
 function renderSeatTables(si) {
   const me = state.me;
-  const nums = Object.keys(si.tables).map(Number).sort((a, b) => a - b);
-  if (state.tableSel == null || !si.tables[state.tableSel]) state.tableSel = si.mine || nums[0];
-  const sel = state.tableSel, people = seatPeople(si.tables[sel]).sort((a, b) => (a.id === me.id ? -1 : b.id === me.id ? 1 : 0));
-  const where = n => n >= 8 ? '2층 소파' : '1층';
+  const STAFF_T = 10;   // 10번은 스태프 테이블 (배치도에는 안 그려요)
+  const nums = Object.keys(si.tables).map(Number).filter(n => n !== STAFF_T).sort((a, b) => a - b).concat(STAFF_T);
+  const staffPeople = () => state.profiles.filter(p => p.table === STAFF_T && !seatOf(p.name) && !String(p.device_id || '').startsWith('bot-'));
+  const myT = si.mine || (me.table === STAFF_T ? STAFF_T : 0);
+  if (state.tableSel == null || !nums.includes(state.tableSel)) state.tableSel = myT || nums[0];
+  const sel = state.tableSel;
+  const people = (sel === STAFF_T ? staffPeople() : seatPeople(si.tables[sel])).sort((a, b) => (a.id === me.id ? -1 : b.id === me.id ? 1 : 0));
+  const where = n => n === STAFF_T ? '스태프' : n >= 8 ? '2층 소파' : '1층';
   const myCard = si.mine ? `<div class="card" style="border-color:var(--brass)"><div class="row" style="justify-content:space-between;align-items:baseline"><div class="eyebrow">지금 내 자리 · ${esc(si.title)}</div><div class="dim">${esc(si.time)}</div></div>
       <div class="row" style="align-items:center;gap:14px;margin-top:6px;flex-wrap:nowrap"><div style="font-family:var(--font-body);font-weight:900;font-size:56px;line-height:1;color:${si.mine >= 8 ? '#6FA3E0' : 'var(--peach)'}">${si.mine}번</div>
       <div style="font-size:18px;font-weight:800">${where(si.mine)}${si.mine >= 8 ? '<div class="dim" style="font-size:13px;font-weight:600">원형으로 둘러앉아요</div>' : ''}</div></div>
       ${si.example ? '<div class="dim" style="margin-top:8px;font-size:12px">예시 명단이에요 · 실제 자리가 아니에요</div>' : ''}</div>`
+    : myT === STAFF_T ? `<div class="card" style="border-color:var(--brass)"><div class="eyebrow">지금 내 자리</div><div style="font-family:var(--font-body);font-weight:900;font-size:40px;line-height:1.1;color:var(--peach);margin-top:6px">10번 <span style="font-size:20px">(스태프)</span></div></div>`
     : `<div class="card"><div class="eyebrow">지금 내 자리 · ${esc(si.title)}</div><div style="margin-top:6px">명단에서 <b>${esc(me.name)}</b> 이름을 못 찾았어요. 진행자에게 말해 주세요.</div></div>`;
-  const grid = nums.map(n => { const t = si.tables[n], c = (t.m || []).length + (t.w || []).length; return `<button class="tbl-cell ${n === sel ? 'on' : ''} ${n === si.mine ? 'mine' : ''}" data-tsel="${n}"><span class="tn">${n}</span><span class="tc">${c}명</span></button>`; }).join('');
-  return `<div class="section" style="margin-top:8px"><div class="section-title"><h2>🪑 테이블</h2><span class="sub">${si.mine ? `나는 <b style="color:var(--brass-2)">${si.mine}번</b>` : ''}</span></div>
+  const grid = nums.map(n => { const t = si.tables[n], c = n === STAFF_T ? staffPeople().length : (t.m || []).length + (t.w || []).length; return `<button class="tbl-cell ${n === sel ? 'on' : ''} ${n === myT ? 'mine' : ''}" data-tsel="${n}"><span class="tn">${n}</span><span class="tc">${n === STAFF_T ? '스태프' : `${c}명`}</span></button>`; }).join('');
+  return `<div class="section" style="margin-top:8px"><div class="section-title"><h2>🪑 테이블</h2><span class="sub">${myT ? `나는 <b style="color:var(--brass-2)">${myT === STAFF_T ? '10번 (스태프)' : myT + '번'}</b>` : ''}</span></div>
     ${myCard}
     <div class="card" style="margin-top:12px"><div class="row" style="justify-content:space-between;align-items:baseline"><div class="eyebrow">1층 · 1~7번</div><div class="dim" style="font-size:12px">${si.mine ? '<span style="color:var(--peach)">■</span> 내 자리 · ' : ''}<span style="color:#E3B57A">□</span> 고른 테이블</div></div>
       ${seatMap(si.layout, 1, si.mine, sel)}
@@ -1199,12 +1204,12 @@ function renderSeatTables(si) {
     <div class="muted" style="margin:14px 0 10px">번호를 누르면 그 테이블이 그림에 표시되고, 누가 앉는지 보여요. 자리는 진행자가 정해요.</div>
     <div class="tbl-grid">${grid}</div></div>
     <div class="section"><div class="section-title"><h2>${sel}번 테이블 <span style="font-size:14px;color:var(--fg-3);font-family:var(--font-body);font-weight:500">${people.length}명 · ${where(sel)}</span></h2><span class="sub">${genderCount(people)}</span></div>
-      ${people.length ? people.map(tableMember).join('') : '<div class="empty">이 테이블은 이번 라운드에 비어 있어요</div>'}</div>`;
+      ${people.length ? people.map(tableMember).join('') : `<div class="empty">${sel === STAFF_T ? '10번(스태프)으로 등록한 사람이 아직 없어요' : '이 테이블은 이번 라운드에 비어 있어요'}</div>`}</div>`;
 }
 function openSeatEditor() {
   const me = state.me; let t = me.table || 0, g = me.gender || '';
   const m = openModal(`<h3>🪑 내 테이블</h3><div class="muted" style="margin-bottom:12px">자리를 옮겼으면 새 번호를 눌러 주세요.</div>
-    <div class="tbl-pick">${Array.from({ length: TABLE_COUNT }, (_, i) => i + 1).map(n => `<button class="tbl-btn ${t === n ? 'on' : ''}" data-tb="${n}">${n}</button>`).join('')}</div>
+    <div class="tbl-pick">${Array.from({ length: TABLE_COUNT }, (_, i) => i + 1).map(n => `<button class="tbl-btn ${t === n ? 'on' : ''}" data-tb="${n}">${n === 10 ? '10<small style="display:block;font-size:11px;font-weight:600;color:var(--fg-2)">스태프</small>' : n}</button>`).join('')}</div>
     <div class="field-err" id="seatErr" style="min-height:18px;margin-top:10px;font-size:13px;color:#FFB4A3;text-align:center"></div>
     <div class="row" style="margin-top:6px;flex-wrap:nowrap"><button class="btn ghost" id="seatCancel" style="flex:1">취소</button><button class="btn" id="seatSave" style="flex:2">저장</button></div>`);
   m.querySelectorAll('[data-tb]').forEach(b => b.onclick = () => { t = +b.dataset.tb; m.querySelectorAll('[data-tb]').forEach(x => x.classList.toggle('on', x === b)); });
