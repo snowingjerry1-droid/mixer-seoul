@@ -457,7 +457,7 @@ const PLACE_EXAMPLES = ['🍸 바 근처','🛋️ 2층 소파 자리','🖥️ 
 const LOOK_EXAMPLES = ['🖤 검은 옷','🤍 흰 셔츠','👓 안경','🧢 모자','🧥 후드티','👖 청자켓','🧶 니트','🧥 코트','👜 가방','👟 운동화'];
 // 호스트·스태프 (이 이름으로 등록하면 뱃지가 붙고, 시상·랭킹에서 빠짐)
 const HOSTS = ['최재민', '이관영', '김찬영'];
-const STAFF = ['남혜승', '윤승하', '이광영', '조태훈', '권예람', '민지원'];
+const STAFF = ['윤승하', '이광영', '조태훈', '권예람', '민지원'];   // 호스트 3명 + 스태프 5명 = 스태프 8명 (모두 10번 테이블)
 function roleOf(p) { const n = (p?.name || '').replace(/\s+/g, ''); return HOSTS.includes(n) ? 'HOST' : STAFF.includes(n) ? 'STAFF' : ''; }
 function roleBadge(p) { const r = roleOf(p); return r ? ` <span class="role-b ${r === 'HOST' ? 'host' : ''}">${r}</span>` : ''; }
 function guests() { return state.profiles.filter(p => !roleOf(p)); }
@@ -869,7 +869,7 @@ function renderRegister() {
     const auto = seatOf(reg.data.name);
     if (auto) { reg.data.table = auto.table; if (!reg.data.gender) reg.data.gender = auto.gender; }
     if (auto) body = `<div class="eyebrow dim" style="margin:0 0 6px">성별</div><div class="quick-a" style="margin-bottom:16px">${GENDERS.map(g => `<button class="quick-btn ${reg.data.gender === g ? 'on' : ''}" data-gd="${g}">${g === '남' ? '남자' : '여자'}</button>`).join('')}</div>
-      <div class="eyebrow dim" style="margin:0 0 6px">내 테이블</div><div class="card" style="border-color:var(--brass);text-align:center"><div style="font-family:var(--font-body);font-weight:900;font-size:44px;line-height:1;color:var(--peach)">${auto.table}번</div><div class="dim" style="margin-top:6px">명단에 있는 자리예요. 라운드가 바뀌면 자동으로 바뀌어요</div></div>`;
+      <div class="eyebrow dim" style="margin:0 0 6px">내 테이블</div><div class="card" style="border-color:var(--brass);text-align:center"><div style="font-family:var(--font-body);font-weight:900;font-size:44px;line-height:1;color:var(--peach)">${auto.table}번${auto.staff ? ' <span style="font-size:20px">(스태프)</span>' : ''}</div><div class="dim" style="margin-top:6px">${auto.staff ? '스태프 자리예요' : '명단에 있는 자리예요. 라운드가 바뀌면 자동으로 바뀌어요'}</div></div>`;
     else body = `<div class="eyebrow dim" style="margin:0 0 6px">성별</div><div class="quick-a" style="margin-bottom:16px">${GENDERS.map(g => `<button class="quick-btn ${reg.data.gender === g ? 'on' : ''}" data-gd="${g}">${g === '남' ? '남자' : '여자'}</button>`).join('')}</div>
       <div class="eyebrow dim" style="margin:0 0 6px">테이블 번호</div><div class="tbl-pick">${Array.from({ length: TABLE_COUNT }, (_, i) => i + 1).map(n => `<button class="tbl-btn ${reg.data.table === n ? 'on' : ''}" data-tb="${n}">${n === 10 ? '10<small style="display:block;font-size:11px;font-weight:600;color:var(--fg-2)">스태프</small>' : n}</button>`).join('')}</div>`;
   } else if (s.key === 'quick') {
@@ -1129,6 +1129,7 @@ function seatOf(name) {
   const R = d.rounds[String(d.current || (d.visible || []).slice(-1)[0] || '')]; if (!R || !R.tables) return null;
   const n = (name || '').replace(/\s+/g, '');
   for (const [t, v] of Object.entries(R.tables)) { if ((v.m || []).includes(n)) return { table: +t, gender: '남' }; if ((v.w || []).includes(n)) return { table: +t, gender: '여' }; }
+  if (roleOf({ name: n })) return { table: 10, gender: '', staff: true };   // 호스트·스태프는 10번
   return null;
 }
 // 화면에 보이는 테이블 번호는 자리 명단을 따라요 (명단에 없는 사람만 등록 때 고른 번호). DB 값은 그대로 둬요
@@ -1182,7 +1183,7 @@ function renderSeatTables(si) {
   const me = state.me;
   const STAFF_T = 10;   // 10번은 스태프 테이블 (배치도에는 안 그려요)
   const nums = Object.keys(si.tables).map(Number).filter(n => n !== STAFF_T).sort((a, b) => a - b).concat(STAFF_T);
-  const staffPeople = () => state.profiles.filter(p => p.table === STAFF_T && !seatOf(p.name) && !String(p.device_id || '').startsWith('bot-'));
+  const staffPeople = () => state.profiles.filter(p => p.table === STAFF_T && !String(p.device_id || '').startsWith('bot-'));
   const myT = si.mine || (me.table === STAFF_T ? STAFF_T : 0);
   if (state.tableSel == null || !nums.includes(state.tableSel)) state.tableSel = myT || nums[0];
   const sel = state.tableSel;
