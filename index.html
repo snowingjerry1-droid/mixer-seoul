@@ -45,6 +45,8 @@ h1,h2,h3{margin:0;font-family:var(--font-display);font-weight:700;text-wrap:bala
 .logo{display:block;max-width:100%;height:auto;margin:0 auto;filter:drop-shadow(0 0 24px rgba(237,117,47,.35))}
 .count-pill{font-size:12px;letter-spacing:.08em;color:var(--fg);border:1px solid var(--line-2);border-radius:999px;padding:5px 11px}
 .icon-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line-2);display:grid;place-items:center;font-size:16px;color:var(--fg-2)}
+#talkWrap{position:fixed;left:0;right:0;top:var(--top-h,62px);bottom:var(--tabs-h,70px);z-index:15;background:#FAF5EF}
+#talkWrap iframe{width:100%;height:100%;border:0;display:block}
 main#view{flex:1;padding:8px 18px calc(92px + env(safe-area-inset-bottom,0px));max-width:560px;width:100%;margin:0 auto}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:space-around;
   padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));background:rgba(51,32,15,.95);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line)}
@@ -428,7 +430,9 @@ body,#register,#waiting{background:var(--bg);background-image:none}
     <button class="tab" data-tab="table"><span class="ic">🪑</span>테이블</button>
     <button class="tab" data-tab="compat"><span class="ic">🤝</span>이름 궁합</button>
     <button class="tab" data-tab="score"><span class="ic">🎰</span>이름 점수</button>
+    <button class="tab" data-tab="talk"><span class="ic">💬</span>대화 카드</button>
   </nav>
+  <div id="talkWrap" class="hidden"></div>
 </div>
 <div id="register" class="hidden"></div>
 <div id="waiting" class="hidden"></div>
@@ -1009,9 +1013,24 @@ function switchTab(tab) {
   window.scrollTo({ top: 0 });
   render();
 }
+// 대화 카드 화면을 위 머리줄과 아래 탭 사이에 맞춰요
+function talkFit() {
+  const r = document.documentElement.style, tb = $('#tabs'), hd = $('#app .topbar');
+  if (tb && tb.getBoundingClientRect().height) r.setProperty('--tabs-h', Math.round(innerHeight - tb.getBoundingClientRect().top) + 'px');
+  if (hd && hd.getBoundingClientRect().height) r.setProperty('--top-h', Math.round(Math.max(0, hd.getBoundingClientRect().bottom)) + 'px');
+}
+addEventListener('resize', () => { if (state.tab === 'talk') talkFit(); });
 function render() {
   const v = $('#view');
   if (!state.me) return;
+  // 💬 대화 카드: 대화 카드 사이트를 앱 안에 띄워요. 한 번 만든 화면은 그대로 둬서(다시 그리지 않음) 보던 카드가 유지돼요
+  const tw = $('#talkWrap');
+  if (state.tab === 'talk') {
+    if (!tw.firstChild) tw.innerHTML = `<iframe src="${TALK_URL}" title="테이블 대화 카드" allow="clipboard-write"></iframe>`;
+    requestAnimationFrame(talkFit);
+    tw.classList.remove('hidden'); v.innerHTML = ''; return;
+  }
+  tw.classList.add('hidden');
   if (state.tab === 'home') v.innerHTML = renderHome();
   else if (state.tab === 'wall') v.innerHTML = renderWall();
   else if (state.tab === 'ask') v.innerHTML = renderAsk();
@@ -1083,6 +1102,7 @@ function renderWall() {
 }
 
 // 🪑 자리 배정 (mixer-seoul-seats 사이트의 data.json을 읽어요). current = 지금 라운드('1'|'2'|'3')
+const TALK_URL = 'https://mixer-seoul-talk.vercel.app/';
 const SEATS_URL = 'https://mixer-seoul-seats.vercel.app/data.json';
 async function fetchSeats() {
   try {
