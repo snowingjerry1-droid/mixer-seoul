@@ -293,6 +293,12 @@ body.screen{overflow:hidden}
 .sc-gate-cnt{margin-top:clamp(16px,4vh,40px);font-size:clamp(22px,3.6vh,36px);color:var(--fg)}
 .sc-gate-qr{margin:clamp(12px,2.6vh,28px) auto 0;width:clamp(200px,40vh,440px);height:clamp(200px,40vh,440px);background:#fff;padding:clamp(10px,1.6vh,18px);border-radius:16px;box-shadow:0 0 0 6px rgba(237,117,47,.25),0 20px 60px rgba(0,0,0,.6)}
 .sc-gate-qr img,.sc-gate-qr canvas{width:100%!important;height:100%!important;display:block}
+.sc-gate-row{display:flex;align-items:center;justify-content:center;gap:clamp(24px,4vw,70px);margin-top:clamp(8px,1.6vh,18px)}
+.sc-gate-row .sc-gate-qr{margin:0;flex:none}
+.sc-gate-map{flex:0 1 auto;width:min(46vw,calc(52vh * 1.4));display:flex;align-items:flex-end;gap:clamp(12px,1.6vw,28px)}
+.sc-gate-map .fl{flex:1;min-width:0}.sc-gate-map .fl.f2{flex:0 0 22%}
+.sc-gate-map .fk{font-size:clamp(14px,2.2vh,22px);font-weight:800;color:var(--fg-2);text-align:left;margin-bottom:-4px}
+.sc-gate-map svg{width:100%!important;max-width:none!important;margin:0!important}
 .sc-gate .sc-gate-cnt{margin-top:clamp(10px,2vh,22px)}
 .sc-gate .sc-gate-cnt b{font-size:clamp(36px,7vh,72px)}
 body.sc-gating .sc-top #qr{visibility:hidden}
@@ -1097,27 +1103,30 @@ function seatInfo() {
   return { r, title: R.title || `${r}차 자리`, time: R.time || '', tables: R.tables, mine, layout: d.layout || [], example: !!d.example };
 }
 // 배치도 (내 테이블만 강조). 1~7번은 1층, 8번 이상은 2층 소파
-function seatMap(layout, floor, mine, sel) {
+// flip: 큰 화면용. 스크린 쪽을 정면에서 보는 방향(180° 돌림, 스크린이 위)
+function seatMap(layout, floor, mine, sel, all, flip) {
   const hi = mine;
-  const its = layout.filter(i => i.floor === floor && i.type !== 'sofa' && !(floor === 2 && i.type !== 'table'));
+  let its = layout.filter(i => i.floor === floor && i.type !== 'sofa' && !(floor === 2 && i.type !== 'table'));
+  if (flip) { const W = floor === 1 ? 1000 : 440, H = 700;
+    its = its.map(i => ({ ...i, x: W - i.x - i.w, y: H - i.y - i.h, size: i.type === 'label' ? Math.round((i.size || 26) * 1.7) : i.size, text: i.type === 'label' ? String(i.text).replace(/[→←]/g, '').trim() : i.type === 'screen' ? '▲ 지금 보고 있는 화면' : i.text })); }
   if (!its.length) return '';
   let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
-  its.forEach(i => { const cx = i.x + i.w / 2, cy = i.y + i.h / 2, hw = i.r ? Math.hypot(i.w, i.h) / 2 : i.w / 2, hh = i.r ? Math.hypot(i.w, i.h) / 2 : i.h / 2, top = i.type === 'screen' ? 40 : 0;
+  its.forEach(i => { const cx = i.x + i.w / 2, cy = i.y + i.h / 2, hw = i.r ? Math.hypot(i.w, i.h) / 2 : i.w / 2, hh = i.r ? Math.hypot(i.w, i.h) / 2 : i.h / 2, top = i.type === 'screen' ? (flip ? 56 : 40) : 0;
     minX = Math.min(minX, cx - hw); maxX = Math.max(maxX, cx + hw); minY = Math.min(minY, cy - hh - top); maxY = Math.max(maxY, cy + hh); });
   if (floor === 1) { minX = Math.min(minX, 10); minY = Math.min(minY, 0); maxX = Math.max(maxX, 990); maxY = Math.max(maxY, 700); }
   const pad = 20, col = floor === 1 ? '#F08A5D' : '#6FA3E0';
-  let g = floor === 1 ? `<path d="M30 20 H970 V680 H30 V420 M30 290 V20" fill="none" stroke="#4A3D36" stroke-width="7" stroke-linecap="round"/>` : '';
+  let g = floor === 1 ? `<path d="${flip ? 'M970 680 H30 V20 H970 V280 M970 410 V680' : 'M30 20 H970 V680 H30 V420 M30 290 V20'}" fill="none" stroke="#4A3D36" stroke-width="7" stroke-linecap="round"/>` : '';
   its.forEach(i => {
     const cx = i.x + i.w / 2, cy = i.y + i.h / 2, rot = `rotate(${i.r || 0} ${cx} ${cy})`;
-    if (i.type === 'screen') g += `<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" rx="${i.h / 2}" fill="#E9DED4"/><text x="${cx}" y="${i.y - 12}" text-anchor="middle" font-size="26" font-weight="800" fill="#E9DED4">${esc(i.text)}</text>`;
+    if (i.type === 'screen') g += `<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" rx="${i.h / 2}" fill="#E9DED4"/><text x="${cx}" y="${i.y - 12}" text-anchor="middle" font-size="${flip ? 40 : 26}" font-weight="800" fill="#E9DED4">${esc(i.text)}</text>`;
     else if (i.type === 'pillar') g += `<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" rx="6" fill="#5A4E48" transform="${rot}"/>`;
     else if (i.type === 'label') g += `<text x="${i.x + 4}" y="${i.y + i.h * .75}" font-size="${i.size || 26}" font-weight="800" fill="#B9AAA0">${esc(i.text)}</text>`;
     else if (i.type === 'table') {
-      const on = String(i.text) === String(hi), picked = !on && String(i.text) === String(sel), op = on || picked ? 1 : .55, fill = on ? col : picked ? 'rgba(227,181,122,.22)' : 'rgba(255,255,255,.04)';
+      const on = String(i.text) === String(hi), picked = !on && String(i.text) === String(sel), op = all || on || picked ? 1 : .55, fill = on ? col : picked ? 'rgba(227,181,122,.22)' : flip ? (floor === 1 ? 'rgba(240,138,93,.18)' : 'rgba(111,163,224,.18)') : 'rgba(255,255,255,.04)';
       const stroke = picked ? '#E3B57A' : col, sw = on || picked ? 8 : 4;
       g += i.shape === 'round' ? `<ellipse cx="${cx}" cy="${cy}" rx="${i.w / 2}" ry="${i.h / 2}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op}"/>`
         : `<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" rx="12" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="${op}" transform="${rot}"/>`;
-      const big = Math.max(40, Math.min(64, Math.min(i.w, i.h) * (i.shape === 'round' ? .5 : .85)));
+      const big = Math.max(40, Math.min(flip ? 80 : 64, Math.min(i.w, i.h) * (i.shape === 'round' ? .5 : .85)));
       g += `<text x="${cx}" y="${cy + big * .36}" text-anchor="middle" font-size="${big}" font-weight="900" fill="${on ? '#1A120D' : '#FFF'}" opacity="${op}">${esc(i.text)}</text>`;
     }
   });
@@ -1577,10 +1586,12 @@ async function startScreenMode() {
     { ms: SCREEN_SPOT_MS * SCREEN_SPOT_PEOPLE, render: () => { const p = pickSpot(); setTimeout(() => personQr(p), 0); return `<h2>오늘 밤, 이런 사람들이 와 있어요</h2><div class="sc-spot" id="scSpotBody">${personHTML(p, 1)}</div>`; },
       after: () => { let n = 1; spotTimer = setInterval(() => { const el = $('#scSpotBody'); if (!el) return; n++; if (n > SCREEN_SPOT_PEOPLE) return; const p = pickSpot(); el.innerHTML = personHTML(p, n); personQr(p); }, SCREEN_SPOT_MS); } },
   ];
+  const gateMap = () => { const L = state.seats?.layout || []; const f1 = seatMap(L, 1, 0, 0, true, true), f2 = seatMap(L, 2, 0, 0, true, true);
+    return f1 ? `<div class="sc-gate-map"><div class="fl"><div class="fk">1층 테이블 배치</div>${f1}</div>${f2 ? `<div class="fl f2"><div class="fk">8·9번은 2층 소파<br><span style="font-weight:600">계단으로 올라가요</span></div>${f2}</div>` : ''}</div>` : ''; };
   const gatePanel = () => `<div class="sc-gate"><div class="eyebrow" style="font-size:clamp(14px,2.2vh,20px)">등록 받는 중</div>
       <h2 style="margin:10px 0 4px">QR을 찍고 등록해 주세요</h2>
       <div class="sc-gate-sub">이름 · 취향까지 2분이면 끝나요</div>
-      <div class="sc-gate-qr" id="gateQr"></div>
+      <div class="sc-gate-row"><div class="sc-gate-qr" id="gateQr"></div>${gateMap()}</div>
       <div class="sc-gate-cnt"><b>${state.profiles.length}</b>명 등록 완료</div></div>`;
   const show = () => {
     clearInterval(spotTimer); clearTimeout(rotateTimer);
@@ -1594,7 +1605,7 @@ async function startScreenMode() {
     prog.style.transition = 'none'; prog.style.width = '0'; void prog.offsetWidth; prog.style.transition = `width ${pn.ms}ms linear`; prog.style.width = '100%';
     rotateTimer = setTimeout(show, pn.ms);
   };
-  await Promise.all([fetchProfiles(), fetchState(), fetchTracks()]); $('#scCount').textContent = state.profiles.length; show();
+  await Promise.all([fetchProfiles(), fetchState(), fetchTracks(), fetchSeats()]); $('#scCount').textContent = state.profiles.length; show();
   let wasOpen = state.open;
   setInterval(async () => { await Promise.all([fetchProfiles(), fetchState(), fetchTracks()]); $('#scCount').textContent = state.profiles.length;
     if (!state.open) { const b = $('.sc-gate-cnt b'); if (b) b.textContent = state.profiles.length; }
