@@ -812,6 +812,7 @@ async function refresh(force) {
 function scheduleRefresh() { clearTimeout(refreshTimer); refreshTimer = setTimeout(() => refresh(), 300); }
 function startSync() {
   setInterval(() => refresh(), POLL_MS);
+  fetchSeats(); setInterval(() => fetchSeats(), 20000);
   try {
     sb.channel('mixer-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'mingle_profiles' }, scheduleRefresh)
@@ -1068,6 +1069,63 @@ function renderWall() {
     ${sel ? `<div class="section"><div class="section-title"><h2>#${esc(sel)} <span style="font-size:14px;color:var(--fg-3);font-family:var(--font-body);font-weight:500">${people.length}명</span></h2><button class="btn sm ghost" id="wallClear">닫기</button></div>
       ${people.map(p => p.id === state.me.id ? `<div class="card tight"><div class="row" style="flex-wrap:nowrap">${avatar(p)}<div style="min-width:0"><div class="name" style="font-size:17px">${esc(p.display)} <span class="dim">나</span></div><div class="muted">${esc(p.intro)}</div></div></div></div>` : personCard(p, { highlight: [sel], btnText: '정보 더보기', go: 'keyword', extra: sel })).join('')}</div>` : ''}`;
 }
+
+// 🪑 자리 배정 (mixer-seoul-seats 사이트의 data.json을 읽어요). current = 지금 라운드('1'|'2'|'3')
+const SEATS_URL = 'https://mixer-seoul-seats.vercel.app/data.json';
+async function fetchSeats() {
+  try {
+    const r = await fetch(SEATS_URL + '?ts=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return;
+    const v = await r.json(); const sig = v.updatedAt + '|' + v.current;
+    if (sig !== state.seatSig) { const first = !state.seatSig; state.seatSig = sig; state.seats = v; state.tableSel = null;
+      if (state.tab === 'table' && !state.busy && state.me) render();
+      if (!first && state.me && seatInfo()) toast('자리가 새로 나왔어요', '🪑 테이블 탭에서 확인해 주세요', { icon: '🪑', ms: 4000 }); }
+  } catch (e) {}
+}
+// 지금 라운드의 배정. 없으면 null
+function seatInfo() {
+  const d = state.seats; if (!d || !d.rounds) return null;
+  const r = String(d.current || (d.visible || []).slice(-1)[0] || ''); const R = d.rounds[r];
+  if (!R || !R.tables) return null;
+  const me = (state.me?.name || '').replace(/\s+/g, '');
+  let mine = 0, myG = '';
+  for (const [n, t] of Object.entries(R.tables)) { if ((t.m || []).includes(me)) { mine = +n; myG = '남'; } if ((t.w || []).includes(me)) { mine = +n; myG = '여'; } }
+  return { r, title: R.title || `${r}차 자리`, time: R.time || '', tables: R.tables, mine, layout: d.layout || [], example: !!d.example };
+}
+// 배치도 (내 테이블만 강조). 1~7번은 1층, 8번 이상은 2층 소파
+function seatMap(layout, tables, hi) {
+  const floor = hi >= 8 ? 2 : 1;
+  const its = layout.filter(i => i.floor === floor && i.type !== 'sofa' && !(floor === 2 && i.type !== 'table'));
+  if (!its.length) return '';
+  let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+  its.forEach(i => { const cx = i.x + i.w / 2, cy = i.y + i.h / 2, hw = i.r ? Math.hypot(i.w, i.h) / 2 : i.w / 2, hh = i.r ? Math.hypot(i.w, i.h) / 2 : i.h / 2, top = i.type === 'screen' ? 40 : 0;
+    minX = Math.min(minX, cx - hw); maxX = Math.max(maxX, cx + hw); minY = Math.min(minY, cy - hh - top); maxY = Math.max(maxY, cy + hh); });
+  if (floor === 1) { minX = Math.min(minX, 10); minY = Math.min(minY, 0); maxX = Math.max(maxX, 990); maxY = Math.max(maxY, 700); }
+  const pad = 20, col = floor === 1 ? '#F08A5D' : '#6FA3E0';
+  let g = floor === 1 ? `<path d="M30 20 H970 V680 H30 V420 M30 290 V20" fill="none" stroke="#4A3D36" stroke-width="7" stroke-linecap="round"/>` : '';
+  its.forEach(i => {
+    const cx = i.x + i.w / 2, cy = i.y + i.h / 2, rot = `rotate(${i.r || 0} ${cx} ${cy})`;
+    if (i.type === 'screen') g += `<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" rx="${i.h / 2}" fill="#E9DED4"/><text x="${cx}" y="${i.y - 12}" text-anchor="middle" font-size="26" font-weight="800" fill="#E9DED4">${esc(i.text)}</text>`;
+    else if (i.type === 'pillar') g += `<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" rx="6" fill="#5A4E48" transform="${rot}"/>`;
+    else if (i.type === 'label') g += `<text x="${i.x + 4}" y="${i.y + i.h * .75}" font-size="${i.size || 26}" font-weight="800" fill="#B9AAA0">${esc(i.text)}</text>`;
+    else if (i.type === 'table') {
+      const on = String(i.text) === String(hi), op = on ? 1 : .35, fill = on ? col : 'rgba(255,255,255,.04)';
+      g += i.shape === 'round' ? `<ellipse cx="${cx}" cy="${cy}" rx="${i.w / 2}" ry="${i.h / 2}" fill="${fill}" stroke="${col}" stroke-width="${on ? 8 : 4}" opacity="${op}"/>`
+        : `<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" rx="12" fill="${fill}" stroke="${col}" stroke-width="${on ? 8 : 4}" opacity="${op}" transform="${rot}"/>`;
+      const big = Math.max(40, Math.min(64, Math.min(i.w, i.h) * (i.shape === 'round' ? .5 : .85)));
+      g += `<text x="${cx}" y="${cy + big * .36}" text-anchor="middle" font-size="${big}" font-weight="900" fill="${on ? '#1A120D' : '#FFF'}" opacity="${op}">${esc(i.text)}</text>`;
+    }
+  });
+  return `<svg viewBox="${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}" style="width:100%;height:auto;display:block;margin-top:10px" font-family="Pretendard Variable, Pretendard, sans-serif">${g}</svg>`;
+}
+// 배정 명단의 이름 → 등록한 프로필 (없으면 이름만 있는 카드)
+function seatPeople(t) {
+  const out = [];
+  [['m', '남'], ['w', '여']].forEach(([k, g]) => (t[k] || []).forEach(name => {
+    const p = state.profiles.find(x => (x.name || '').replace(/\s+/g, '') === name && !String(x.device_id || '').startsWith('bot-'));
+    out.push(p ? { ...p, gender: p.gender || g } : { id: 'seat:' + name, name, display: name, gender: g, keywords: [], created_at: '', _stub: true });
+  }));
+  return out;
+}
 // 🪑 테이블: 번호를 고르면 그 테이블에 앉은 사람과 특징을 보여 줌
 function genderCount(list) { const m = list.filter(p => p.gender === '남').length, f = list.filter(p => p.gender === '여').length; return [m ? `남 ${m}` : '', f ? `여 ${f}` : ''].filter(Boolean).join(' · '); }
 function tableMember(p) {
@@ -1078,9 +1136,10 @@ function tableMember(p) {
     ${profileLines(p)}${p.curious ? `<div class="p-line">🤔 <b>${esc(p.curious)}</b> 궁금해요</div>` : ''}${p.song ? `<div class="p-line">🎵 ${esc(p.song)}</div>` : ''}
     ${kws.length ? `<div class="chips" style="margin-top:6px">${kws.map(k => `<span class="chip">#${esc(k)}</span>`).join('')}</div>` : ''}
     </div>
-    ${me ? '' : `<button class="btn sm ghost" data-go="${p.id}" data-kind="plain">더보기</button>`}</div></div>`;
+    ${me || p._stub ? '' : `<button class="btn sm ghost" data-go="${p.id}" data-kind="plain">더보기</button>`}</div></div>`;
 }
 function renderTables() {
+  const si = seatInfo(); if (si) return renderSeatTables(si);
   const me = state.me;
   if (state.tableSel == null) state.tableSel = me.table || 1;
   const sel = state.tableSel;
@@ -1095,6 +1154,25 @@ function renderTables() {
     ${none ? `<div class="dim" style="margin-top:8px;text-align:center">테이블을 아직 안 고른 사람 ${none}명</div>` : ''}</div>
     <div class="section"><div class="section-title"><h2>${sel}번 테이블 <span style="font-size:14px;color:var(--fg-3);font-family:var(--font-body);font-weight:500">${people.length}명</span></h2><span class="sub">${genderCount(people)}</span></div>
       ${people.length ? people.map(tableMember).join('') : '<div class="empty">아직 이 테이블에 등록한 사람이 없어요</div>'}</div>`;
+}
+function renderSeatTables(si) {
+  const me = state.me;
+  const nums = Object.keys(si.tables).map(Number).sort((a, b) => a - b);
+  if (state.tableSel == null || !si.tables[state.tableSel]) state.tableSel = si.mine || nums[0];
+  const sel = state.tableSel, people = seatPeople(si.tables[sel]).sort((a, b) => (a.id === me.id ? -1 : b.id === me.id ? 1 : 0));
+  const where = n => n >= 8 ? '2층 소파' : '1층';
+  const myCard = si.mine ? `<div class="card" style="border-color:var(--brass)"><div class="row" style="justify-content:space-between;align-items:baseline"><div class="eyebrow">지금 내 자리 · ${esc(si.title)}</div><div class="dim">${esc(si.time)}</div></div>
+      <div class="row" style="align-items:center;gap:14px;margin-top:6px;flex-wrap:nowrap"><div style="font-family:var(--font-body);font-weight:900;font-size:56px;line-height:1;color:${si.mine >= 8 ? '#6FA3E0' : 'var(--peach)'}">${si.mine}번</div>
+      <div style="font-size:18px;font-weight:800">${where(si.mine)}${si.mine >= 8 ? '<div class="dim" style="font-size:13px;font-weight:600">원형으로 둘러앉아요</div>' : ''}</div></div>
+      ${seatMap(si.layout, si.tables, si.mine)}${si.example ? '<div class="dim" style="margin-top:8px;font-size:12px">예시 명단이에요 · 실제 자리가 아니에요</div>' : ''}</div>`
+    : `<div class="card"><div class="eyebrow">지금 내 자리 · ${esc(si.title)}</div><div style="margin-top:6px">명단에서 <b>${esc(me.name)}</b> 이름을 못 찾았어요. 진행자에게 말해 주세요.</div></div>`;
+  const grid = nums.map(n => { const t = si.tables[n], c = (t.m || []).length + (t.w || []).length; return `<button class="tbl-cell ${n === sel ? 'on' : ''} ${n === si.mine ? 'mine' : ''}" data-tsel="${n}"><span class="tn">${n}</span><span class="tc">${c}명</span></button>`; }).join('');
+  return `<div class="section" style="margin-top:8px"><div class="section-title"><h2>🪑 테이블</h2><span class="sub">${si.mine ? `나는 <b style="color:var(--brass-2)">${si.mine}번</b>` : ''}</span></div>
+    ${myCard}
+    <div class="muted" style="margin:14px 0 10px">번호를 누르면 그 테이블에 누가 앉는지 보여요. 자리는 진행자가 정해요.</div>
+    <div class="tbl-grid">${grid}</div></div>
+    <div class="section"><div class="section-title"><h2>${sel}번 테이블 <span style="font-size:14px;color:var(--fg-3);font-family:var(--font-body);font-weight:500">${people.length}명 · ${where(sel)}</span></h2><span class="sub">${genderCount(people)}</span></div>
+      ${people.length ? people.map(tableMember).join('') : '<div class="empty">이 테이블은 이번 라운드에 비어 있어요</div>'}</div>`;
 }
 function openSeatEditor() {
   const me = state.me; let t = me.table || 0, g = me.gender || '';
