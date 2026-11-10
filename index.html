@@ -877,7 +877,7 @@ function renderRegister() {
     if (auto) body = `<div class="eyebrow dim" style="margin:0 0 6px">성별</div><div class="quick-a" style="margin-bottom:16px">${GENDERS.map(g => `<button class="quick-btn ${reg.data.gender === g ? 'on' : ''}" data-gd="${g}">${g === '남' ? '남자' : '여자'}</button>`).join('')}</div>
       <div class="eyebrow dim" style="margin:0 0 6px">내 테이블</div><div class="card" style="border-color:var(--brass);text-align:center"><div style="font-family:var(--font-body);font-weight:900;font-size:44px;line-height:1;color:var(--peach)">${auto.table}번${auto.staff ? ' <span style="font-size:20px">(스태프)</span>' : ''}</div><div class="dim" style="margin-top:6px">${auto.staff ? '스태프 자리예요' : '명단에 있는 자리예요. 라운드가 바뀌면 자동으로 바뀌어요'}</div></div>`;
     else body = `<div class="eyebrow dim" style="margin:0 0 6px">성별</div><div class="quick-a" style="margin-bottom:16px">${GENDERS.map(g => `<button class="quick-btn ${reg.data.gender === g ? 'on' : ''}" data-gd="${g}">${g === '남' ? '남자' : '여자'}</button>`).join('')}</div>
-      <div class="card" style="text-align:center"><div style="font-weight:700">테이블은 고르지 않아도 돼요</div><div class="dim" style="margin-top:6px">자리 명단에 없는 이름이에요. 앉을 곳은 진행자가 안내해 드려요</div></div>`;
+      <div class="card" style="text-align:center"><div style="font-weight:700">테이블은 고르지 않아도 돼요</div><div class="dim" style="margin-top:6px">${seatLaterRound(reg.data.name) ? `${seatLaterRound(reg.data.name)}차부터 자리가 나와요. 그 전까지는 진행자가 안내해 드려요` : '자리 명단에 없는 이름이에요. 앉을 곳은 진행자가 안내해 드려요'}</div></div>`;
     if (!auto && !reg.editing) reg.data.table = 0;
   } else if (s.key === 'quick') {
     body = `<div class="stack" id="quickWrap">${QUICK_QUESTIONS.map((x, i) => `<div class="quick-row"><div class="quick-q">${esc(x.q)}</div><div class="quick-a">${x.a.map(a => `<button class="quick-btn ${reg.data.quick[i] === a ? 'on' : ''}" data-qi="${i}" data-qa="${esc(a)}">${esc(a)}</button>`).join('')}</div></div>`).join('')}</div>`;
@@ -1143,6 +1143,13 @@ function seatOf(name) {
   if (roleOf({ name: n })) return { table: 10, gender: '', staff: true };   // 호스트·스태프는 10번
   return null;
 }
+// 지금 라운드엔 없지만 뒤 라운드(늦게 오는 사람)에 자리가 있으면 그 라운드 번호
+function seatLaterRound(name) {
+  const d = state.seats; if (!d || !d.rounds) return 0;
+  const cur = +(d.current || 0), n = (name || '').replace(/\s+/g, '');
+  for (const r of Object.keys(d.rounds).map(Number).sort()) { if (r <= cur) continue; const T = d.rounds[r].tables || {}; if (Object.values(T).some(v => (v.m || []).includes(n) || (v.w || []).includes(n))) return r; }
+  return 0;
+}
 // 화면에 보이는 테이블 번호는 자리 명단을 따라요 (명단에 없는 사람만 등록 때 고른 번호). DB 값은 그대로 둬요
 function applySeatTables() {
   (state.profiles || []).forEach(p => {
@@ -1205,7 +1212,7 @@ function renderSeatTables(si) {
       <div style="font-size:18px;font-weight:800">${where(si.mine)}${si.mine >= 8 ? '<div class="dim" style="font-size:13px;font-weight:600">원형으로 둘러앉아요</div>' : ''}</div></div>
       ${si.example ? '<div class="dim" style="margin-top:8px;font-size:12px">예시 명단이에요 · 실제 자리가 아니에요</div>' : ''}</div>`
     : myT === STAFF_T ? `<div class="card" style="border-color:var(--brass)"><div class="eyebrow">지금 내 자리</div><div style="font-family:var(--font-body);font-weight:900;font-size:40px;line-height:1.1;color:var(--peach);margin-top:6px">10번 <span style="font-size:20px">(스태프)</span></div></div>`
-    : `<div class="card"><div class="eyebrow">지금 내 자리 · ${esc(si.title)}</div><div style="margin-top:6px">자리 명단에 없는 이름이에요. 앉을 곳은 진행자가 안내해 드려요.</div></div>`;
+    : `<div class="card"><div class="eyebrow">지금 내 자리 · ${esc(si.title)}</div><div style="margin-top:6px">${seatLaterRound(me.name) ? `${seatLaterRound(me.name)}차부터 자리가 나와요. 그 전까지는 진행자가 안내해 드려요.` : '자리 명단에 없는 이름이에요. 앉을 곳은 진행자가 안내해 드려요.'}</div></div>`;
   const grid = nums.map(n => { const t = si.tables[n], c = n === STAFF_T ? staffPeople().length : (t.m || []).length + (t.w || []).length; return `<button class="tbl-cell ${n === sel ? 'on' : ''} ${n === myT ? 'mine' : ''}" data-tsel="${n}"><span class="tn">${n}</span><span class="tc">${n === STAFF_T ? '스태프' : `${c}명`}</span></button>`; }).join('');
   return `<div class="section" style="margin-top:8px"><div class="section-title"><h2>🪑 테이블</h2><span class="sub">${myT ? `나는 <b style="color:var(--brass-2)">${myT === STAFF_T ? '10번 (스태프)' : myT + '번'}</b>` : ''}</span></div>
     ${myCard}
