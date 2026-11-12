@@ -1597,6 +1597,26 @@ async function startScreenMode() {
       <div class="join"><div class="txt"><div class="t1">지금 들어와서 등록하세요</div><div class="t2">${esc(joinUrl.replace(/^https?:\/\//, ''))}</div><div class="cnt"><span id="scCount">0</span>명 입장</div></div><div id="qr"></div></div></div>
     <div class="sc-body"><div class="sc-panel" id="scPanel"></div></div><div class="sc-progress" id="scProg"></div>`;
   try { new QRCode($('#qr'), { text: joinUrl, width: 130, height: 130, correctLevel: QRCode.CorrectLevel.M }); } catch (e) { }
+  // 전체 화면: 오른쪽 아래 버튼 · F 키 · 더블클릭. 버튼은 마우스를 움직일 때만 잠깐 보여요
+  (() => {
+    const b = document.createElement('button'); b.id = 'fsBtn'; b.type = 'button';
+    b.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:99;font:700 15px/1 var(--font-body,system-ui);padding:12px 16px;border-radius:999px;border:1px solid rgba(240,212,172,.45);background:rgba(43,25,12,.9);color:#F6E6CC;cursor:pointer;transition:opacity .4s';
+    const can = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+    const isFs = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+    const label = () => { b.textContent = isFs() ? '전체 화면 끄기 (F)' : '⛶ 전체 화면 (F)'; };
+    const toggle = () => { const d = document.documentElement;
+      if (isFs()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      else (d.requestFullscreen || d.webkitRequestFullscreen).call(d); };
+    if (!can) return;
+    label(); document.body.appendChild(b);
+    b.onclick = e => { e.stopPropagation(); toggle(); };
+    document.addEventListener('fullscreenchange', label); document.addEventListener('webkitfullscreenchange', label);
+    document.addEventListener('keydown', e => { if ((e.key === 'f' || e.key === 'F') && !e.metaKey && !e.ctrlKey && !e.altKey && !/INPUT|TEXTAREA/.test(document.activeElement?.tagName || '')) { e.preventDefault(); toggle(); } });
+    document.addEventListener('dblclick', toggle);
+    let hideT; const show = () => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; document.body.style.cursor = ''; clearTimeout(hideT);
+      hideT = setTimeout(() => { b.style.opacity = '0'; b.style.pointerEvents = 'none'; if (isFs()) document.body.style.cursor = 'none'; }, 3000); };
+    document.addEventListener('mousemove', show); show();
+  })();
   // 순환: 스포트라이트(한 사람씩 소개 + QR)만 계속 돌아요
   let lastSpot = null, spotTimer = null, rotateTimer = null, idx = 0;
   const pickSpot = () => { const pool = state.profiles.filter(p => p.intro && p.id !== lastSpot); if (!pool.length) return null; const p = pickRandom(pool); lastSpot = p.id; return p; };
